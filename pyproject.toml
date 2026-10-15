@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deltaproof"
+version = "0.1.0"
+description = "Difference-proportional verification of live heterogeneous database migrations"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+db = ["psycopg[binary]>=3.1", "cassandra-driver>=3.29"]
+
+[tool.setuptools]
+packages = ["deltaproof"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

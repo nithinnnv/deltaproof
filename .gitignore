@@ -4,3 +4,15 @@ __pycache__/
 results/raw/
 .pytest_cache/
 .claude/
+paper/*.aux
+paper/*.log
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.out
+paper/*.synctex.gz
+*.egg-info/
+paper/**/*.aux
+paper/**/*.log
+paper/**/*.fls
+paper/**/*.fdb_latexmk
+paper/**/*.out
