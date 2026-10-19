@@ -1,0 +1,3 @@
+n,levels,memory_bytes,memory_bytes_per_row,bulk_insert_us_per_row,update_us_single,update_us_batched_2000
+100000,4,2794284,27.94,0.547,775.0,1.872
+1000000,5,21705516,21.71,0.679,939.5,2.82

@@ -1,0 +1,12 @@
+kind,diffs_per_partition,cells_per_partition,load_vs_capacity,failed_partition_fraction,d,estimate_ratio_median,estimate_ratio_p5,estimate_ratio_p95
+decode,128.0,513,0.5,0.0,,,,
+decode,256.0,513,1.0,0.0104,,,,
+decode,320.0,513,1.25,0.0052,,,,
+decode,384.0,513,1.5,0.099,,,,
+decode,512.0,513,2.0,1.0,,,,
+decode,640.0,513,2.5,1.0,,,,
+decode,768.0,513,3.0,1.0,,,,
+strata,,,,,100,1.0,0.997,1.002
+strata,,,,,1000,0.976,0.887,1.107
+strata,,,,,10000,0.992,0.812,1.146
+strata,,,,,100000,0.988,0.813,1.168
