@@ -1,0 +1,19 @@
+# Source and target stores for the end-to-end experiments (bench/e2e.py, bench/live_e2e.py).
+services:
+  postgres:
+    build: docker/postgres
+    image: deltaproof-postgres:16.4-wal2json
+    environment:
+      POSTGRES_PASSWORD: deltaproof
+      POSTGRES_DB: ledger
+      TZ: UTC
+      PGTZ: UTC
+    ports: ["55432:5432"]
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=4", "-c", "max_connections=200", "-c", "shared_buffers=512MB", "-c", "output_plugin_libraries=wal2json"]
+  cassandra:
+    image: cassandra:4.1.6
+    environment:
+      MAX_HEAP_SIZE: 1G
+      HEAP_NEWSIZE: 256M
+      CASSANDRA_CLUSTER_NAME: deltaproof
+    ports: ["59042:9042"]
