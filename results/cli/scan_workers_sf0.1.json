@@ -1,0 +1,58 @@
+[
+ {
+  "store": "postgresql",
+  "workers": 1,
+  "rows": 600552,
+  "seconds": 17.5,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "postgresql",
+  "workers": 2,
+  "rows": 600552,
+  "seconds": 9.2,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "postgresql",
+  "workers": 4,
+  "rows": 600552,
+  "seconds": 5.1,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "postgresql",
+  "workers": 8,
+  "rows": 600552,
+  "seconds": 3.0,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "cassandra",
+  "workers": 1,
+  "rows": 600572,
+  "seconds": 27.1,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "cassandra",
+  "workers": 2,
+  "rows": 600572,
+  "seconds": 13.5,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "cassandra",
+  "workers": 4,
+  "rows": 600572,
+  "seconds": 7.2,
+  "identical_to_1_worker": true
+ },
+ {
+  "store": "cassandra",
+  "workers": 8,
+  "rows": 600572,
+  "seconds": 4.1,
+  "identical_to_1_worker": true
+ }
+]

@@ -22,10 +22,22 @@ class TableSpec:
     tag: int
     key: tuple[str, ...]
     columns: tuple[Column, ...]
+    key_types: tuple = ()  # canonical type per key column; empty means all Int
+    hash_key: bool = False  # force hashed keys, e.g. for integers wider than 30 bits
 
     @property
     def column_names(self) -> list[str]:
         return list(self.key) + [c.name for c in self.columns]
+
+    @property
+    def hashed(self) -> bool:
+        """Packed keys hold up to four small integers; anything else is hashed into the same 128 bits."""
+        return self.hash_key or len(self.key) > 4 or any(not isinstance(t, Int) for t in self.key_types)
+
+    @property
+    def key_only(self) -> TableSpec:
+        """The same table with no value columns, for key-only scans."""
+        return TableSpec(self.name, self.tag, self.key, (), self.key_types, self.hash_key)
 
     def normalize(self, raw: dict) -> dict:
         row = dict(raw)
@@ -46,9 +58,13 @@ class TableSpec:
         return row
 
     def key_of(self, row: dict) -> tuple[int, int]:
-        return canon.pack_key(self.tag, tuple(int(row[k]) for k in self.key))
+        if not self.hashed:
+            return canon.pack_key(self.tag, tuple(int(row[k]) for k in self.key))
+        types = self.key_types or (Int(),) * len(self.key)
+        return canon.hash_key(self.tag, [(t, row[k]) for k, t in zip(self.key, types)])
 
-    def digest(self, row: dict) -> int:
+    def words(self, row: dict) -> list[int]:
+        """One canonical word per value column; two rows agree on a column iff its words match."""
         words = []
         for c in self.columns:
             v = row.get(c.name)
@@ -58,7 +74,10 @@ class TableSpec:
                 words.append(canon.word_int(c.type.tag, None))
             else:
                 words.append(canon.word_int(c.type.tag, c.type.canon(v)))
-        return canon.fold_words_int(words)
+        return words
+
+    def digest(self, row: dict) -> int:
+        return canon.fold_words_int(self.words(row))
 
     def element(self, raw: dict) -> tuple[int, int, int]:
         row = self.normalize(raw)
@@ -66,7 +85,9 @@ class TableSpec:
         return khi, klo, self.digest(row)
 
     def cql_ddl(self, keyspace: str) -> str:
-        cols = [f"{k} int" for k in self.key] + [f"{c.name} {_CQL[type(c.type)]}" for c in self.columns]
+        types = self.key_types or (Int(),) * len(self.key)
+        cols = [f"{k} {_CQL[type(t)]}" for k, t in zip(self.key, types)] + \
+               [f"{c.name} {_CQL[type(c.type)]}" for c in self.columns]
         return f"CREATE TABLE {keyspace}.{self.name} ({', '.join(cols)}, PRIMARY KEY (({', '.join(self.key)})))"
 
 

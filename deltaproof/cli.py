@@ -13,13 +13,17 @@ The spec lists each table's primary key and its non-key columns with their canon
     columns = "l_partkey:i l_quantity:d2 l_shipdate:dt l_comment:t"
 
 Types: i integer, d<scale> exact decimal, f float, t text, c fixed-width char, ts timestamp (ms),
-dt date; a trailing '?' marks a nullable column.
+dt date; a trailing '?' marks a nullable column. Key columns are integers unless typed, e.g.
+key = ["region:t", "account_id"]. Up to four integer key columns below 2^30 are packed into the
+128-bit key directly; any other key (text, more columns, `hash_key = true`) is hashed into it,
+and reported keys are mapped back to their values with a key-only scan.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import tomllib
@@ -50,7 +54,13 @@ def load_spec(path: str) -> list[TableSpec]:
                 cols.append(Column(name, Dec(int(base[1:])), nullable=ty.endswith("?")))
             else:
                 cols += _cols(item)
-        specs.append(TableSpec(t["name"], tag, tuple(t["key"]), tuple(cols)))
+        # Key entries are "name" (integer) or "name:type", e.g. "sku:t" for a text key.
+        names, types = [], []
+        for item in t["key"]:
+            name, _, ty = item.partition(":")
+            names.append(name)
+            types.append(_cols(f"{name}:{ty or 'i'}")[0].type)
+        specs.append(TableSpec(t["name"], tag, tuple(names), tuple(cols), tuple(types), t.get("hash_key", False)))
     if not specs:
         raise SystemExit(f"{path}: no [[table]] entries")
     return specs
@@ -100,6 +110,19 @@ class Store:
             self.conn.close()
 
 
+def scan(url: str, specs: list[TableSpec], workers: int) -> Table:
+    """All elements of one store: parallel slices by default, one connection with --workers 1."""
+    if workers > 1:
+        from .parallel import scan as parallel_scan
+
+        return parallel_scan(url, specs, workers)
+    store = Store(url)
+    try:
+        return store.scan(specs)
+    finally:
+        store.close()
+
+
 def build(table: Table, max_differences: int | None = None) -> Sketch:
     cap = max(64, len(table) // 8)
     if max_differences is not None:  # a file for shipping: keep only the levels that many differences need
@@ -143,8 +166,30 @@ def common(a: Sketch, b: Sketch) -> tuple[Sketch, Sketch]:
     return out[0], out[1]
 
 
-def describe(rep: Report, specs: list[TableSpec], limit: int) -> dict:
+def resolve_keys(urls: list[str], specs: list[TableSpec], keys) -> dict:
+    """Map hashed keys back to their column values with a key-only scan of the stores."""
     by_tag = {s.tag: s for s in specs}
+    want = {k for k in keys if by_tag[canon.unpack_key(*k, 1)[0]].hashed}
+    out: dict = {}
+    for url in urls:
+        if len(out) == len(want):
+            break
+        store = Store(url)
+        for spec in specs:
+            if not spec.hashed:
+                continue
+            ko = spec.key_only
+            for r in store.rows(ko):
+                k = ko.key_of(ko.normalize(r))
+                if k in want and k not in out:
+                    out[k] = {c: r[c] for c in spec.key}
+        store.close()
+    return out
+
+
+def describe(rep: Report, specs: list[TableSpec], limit: int, urls: list[str] = ()) -> dict:
+    by_tag = {s.tag: s for s in specs}
+    resolved = resolve_keys([u for u in urls if u], specs, rep.keys) if any(s.hashed for s in specs) else {}
     out = {"differences": len(rep.keys), "estimate": rep.estimate, "level": rep.level,
            "failed_partitions": rep.failed_partitions,
            "cost": {"bytes": rep.cost.bytes, "round_trips": rep.cost.round_trips, "rows_rescanned": rep.cost.rows_scanned}}
@@ -154,15 +199,19 @@ def describe(rep: Report, specs: list[TableSpec], limit: int) -> dict:
         for khi, klo in sorted(keys):
             tag, _ = canon.unpack_key(khi, klo, 1)
             spec = by_tag[tag]
-            _, parts = canon.unpack_key(khi, klo, len(spec.key))
-            rows.append({"table": spec.name, **dict(zip(spec.key, parts))})
+            if spec.hashed:
+                values = resolved.get((khi, klo), {"key_hash": f"{khi:016x}{klo:016x}"})
+                rows.append({"table": spec.name, **values})
+            else:
+                _, parts = canon.unpack_key(khi, klo, len(spec.key))
+                rows.append({"table": spec.name, **dict(zip(spec.key, parts))})
         out[name] = {"count": len(rows), "keys": rows if limit < 0 else rows[:limit]}
     return out
 
 
 def show(result: dict, as_json: bool, limit: int) -> None:
     if as_json:
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, default=str))
         return
     n = result["differences"]
     print("source and target are identical" if n == 0 else f"{n} differing keys")
@@ -181,10 +230,8 @@ def show(result: dict, as_json: bool, limit: int) -> None:
 
 def cmd_sketch(args) -> None:
     specs = load_spec(args.spec)
-    store = Store(args.store)
     t0 = time.perf_counter()
-    table = store.scan(specs)
-    store.close()
+    table = scan(args.store, specs, args.workers)
     sk = build(table, args.max_differences)
     save(sk, len(table), args.output)
     print(f"{len(table):,} rows -> {args.output} ({Path(args.output).stat().st_size:,} bytes, "
@@ -199,10 +246,7 @@ def _store_rescan(args, specs):
         if not (args.source and args.target):
             raise SystemExit("a partition did not decode; pass --source and --target to compare it exactly")
         if not cache:
-            stores = [Store(args.source), Store(args.target)]
-            cache["r"] = table_rescan(stores[0].scan(specs), stores[1].scan(specs))
-            for s in stores:
-                s.close()
+            cache["r"] = table_rescan(scan(args.source, specs, args.workers), scan(args.target, specs, args.workers))
         return cache["r"](partitions, p)
 
     return rescan
@@ -213,25 +257,82 @@ def cmd_diff(args) -> None:
     (a, _), (b, _) = load(args.source_sketch), load(args.target_sketch)
     a, b = common(a, b)
     rep = verify(a, b, _store_rescan(args, specs))
-    show(describe(rep, specs, args.limit), args.json, args.limit)
+    show(describe(rep, specs, args.limit, [args.source, args.target]), args.json, args.limit)
     sys.exit(1 if rep.keys else 0)
 
 
 def cmd_verify(args) -> None:
     specs = load_spec(args.spec)
-    tables = []
-    for url in (args.source, args.target):
-        store = Store(url)
-        tables.append(store.scan(specs))
-        store.close()
+    tables = [scan(url, specs, args.workers) for url in (args.source, args.target)]
     a, b = common(build(tables[0]), build(tables[1]))
     rep = verify(a, b, table_rescan(*tables))
-    show(describe(rep, specs, args.limit), args.json, args.limit)
+    show(describe(rep, specs, args.limit, [args.source, args.target]), args.json, args.limit)
     sys.exit(1 if rep.keys else 0)
+
+
+def fetch_row(store: Store, spec: TableSpec, key: dict) -> dict | None:
+    """Point read of one row by primary key; None if the store has no such row."""
+    cols, where = ", ".join(spec.column_names), " AND ".join(f"{k} = %s" for k in spec.key)
+    params = [key[k] for k in spec.key]
+    if store.kind == "cassandra":
+        r = store.session.execute(f"SELECT {cols} FROM {store.keyspace}.{spec.name} WHERE {where}", params).one()
+    else:
+        r = store.conn.execute(f"SELECT {cols} FROM {spec.name} WHERE {where}", params).fetchone()
+    return None if r is None else spec.normalize(dict(zip(spec.column_names, r)))
+
+
+def inspect_keys(report: dict, specs: list[TableSpec], source: Store, target: Store, limit: int) -> list[dict]:
+    """For each reported key, the columns whose canonical values differ, with both stores' values."""
+    by_name = {s.name: s for s in specs}
+    out = []
+    for cls in ("missing_in_target", "extra_in_target", "value_mismatch"):
+        for entry in report[cls]["keys"][: None if limit < 0 else limit]:
+            spec = by_name[entry["table"]]
+            if "key_hash" in entry:  # hashed key that could not be mapped back to values
+                out.append({"table": spec.name, "key": entry, "class": cls, "columns": [], "note": "unresolved key"})
+                continue
+            key = {k: entry[k] for k in spec.key}
+            s, t = fetch_row(source, spec, key), fetch_row(target, spec, key)
+            cols = []
+            if s is not None and t is not None:
+                for c, ws, wt in zip(spec.columns, spec.words(s), spec.words(t)):
+                    if ws != wt:
+                        cols.append({"name": c.name, "source": s.get(c.name), "target": t.get(c.name)})
+            out.append({"table": spec.name, "key": key, "class": cls, "columns": cols,
+                        "source_row": s is not None, "target_row": t is not None})
+    return out
+
+
+def cmd_inspect(args) -> None:
+    specs = load_spec(args.spec)
+    report = json.loads(Path(args.report).read_text())
+    source, target = Store(args.source), Store(args.target)
+    try:
+        found = inspect_keys(report, specs, source, target, args.limit)
+    finally:
+        source.close()
+        target.close()
+    if args.json:
+        print(json.dumps(found, indent=2, default=str))
+        return
+    for f in found:
+        key = " ".join(f"{k}={v}" for k, v in f["key"].items())
+        if f["class"] == "value_mismatch" and f["source_row"] and f["target_row"] and not f["columns"]:
+            state = "now equal (repaired, or changed since the report)"
+        else:
+            state = {"missing_in_target": "missing in target", "extra_in_target": "extra in target",
+                     "value_mismatch": "value mismatch"}[f["class"]]
+            if f.get("note"):
+                state += f" ({f['note']})"
+        print(f"{f['table']} {key}: {state}")
+        for c in f["columns"]:
+            print(f"    {c['name']:<18} source={c['source']!s:<28} target={c['target']!s}")
 
 
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(prog="deltaproof", description="Find the exact rows that differ between two databases.")
+    p.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1),
+                   help="parallel scan processes per store (1 = one connection, no parallelism)")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("sketch", help="scan one store and write its sketch")
     s.add_argument("--spec", required=True)
@@ -253,8 +354,22 @@ def main(argv=None) -> None:
         c.add_argument("--json", action="store_true")
         c.add_argument("--limit", type=int, default=20, help="keys to print per class (-1 = all)")
         c.set_defaults(fn=fn)
+    i = sub.add_parser("inspect", help="show which columns differ for the keys in a --json report")
+    i.add_argument("--spec", required=True)
+    i.add_argument("--source", required=True)
+    i.add_argument("--target", required=True)
+    i.add_argument("report", help="output of verify or diff with --json")
+    i.add_argument("--json", action="store_true")
+    i.add_argument("--limit", type=int, default=20, help="keys to inspect per class (-1 = all)")
+    i.set_defaults(fn=cmd_inspect)
     args = p.parse_args(argv)
-    args.fn(args)
+    try:
+        args.fn(args)
+    except SystemExit:
+        raise
+    except Exception as e:  # exit 0 = equal, 1 = differences, 2 = could not verify
+        print(f"deltaproof: error: {e}", file=sys.stderr)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

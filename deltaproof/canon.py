@@ -201,6 +201,30 @@ def pack_key(tag: int, parts: tuple[int, ...]) -> tuple[int, int]:
     return v >> 64, v & MASK
 
 
+def hash_key(tag: int, parts: list[tuple[object, object]]) -> tuple[int, int]:
+    """Any primary key -> 8-bit table tag + 120-bit BLAKE2b of its canonical parts, in 128 bits.
+
+    `parts` holds (canonical type, value) per key column. Text is hashed from its full NFC bytes
+    (not the 64-bit text word), so distinct keys collide only with probability ~ n^2 / 2^121.
+    The tag sits where pack_key puts it, so unpack_key(...)[0] still recovers the table.
+    """
+    if not 0 <= tag < 256:
+        raise CanonError("tag must fit 8 bits")
+    h = hashlib.blake2b(digest_size=15, person=b"deltaproof-key")
+    for t, v in parts:
+        if v is None:
+            raise CanonError("null in a primary key")
+        if isinstance(t, Char):
+            data = unicodedata.normalize("NFC", v.rstrip(" ")).encode("utf-8")
+        elif isinstance(t, Text):
+            data = unicodedata.normalize("NFC", v).encode("utf-8")
+        else:
+            data = t.canon(v).to_bytes(8, "little")
+        h.update(bytes([t.tag]) + len(data).to_bytes(4, "little") + data)
+    v = (tag << 120) | int.from_bytes(h.digest(), "big")
+    return v >> 64, v & MASK
+
+
 def unpack_key(khi: int, klo: int, arity: int) -> tuple[int, tuple[int, ...]]:
     v = (khi << 64) | klo
     m = (1 << KEY_PART_BITS) - 1
