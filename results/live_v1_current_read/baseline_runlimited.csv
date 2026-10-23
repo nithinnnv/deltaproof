@@ -1,0 +1,10 @@
+metric,value
+mode,baseline
+rate,unlimited
+seconds,60
+terminals,8
+tpcc_throughput_tps,3578.48
+tpcc_goodput_tps,1278.33
+tpcc_latency_p50_ms,2.08
+tpcc_latency_p95_ms,4.28
+tpcc_latency_p99_ms,8.25

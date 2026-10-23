@@ -1,0 +1,4 @@
+label,t,watermark,estimate,level,bytes,round_trips,rows_rescanned,failed_partitions,candidates,reported,reported_false,faulty_at_or_below_w,missed,target_point_reads,sketch_ms,total_ms
+live,17.9,9366594863,3360,3,4914432,2,0,0,2090,9,0,8,0,2090,110.7,9726.0
+live,33.4,9427515575,3008,2,777600,2,0,0,1954,43,0,43,0,1954,208.3,7369.1
+final,36.4,9446968840,92,-1,186624,1,0,0,51,51,0,51,0,51,277.4,458.1
