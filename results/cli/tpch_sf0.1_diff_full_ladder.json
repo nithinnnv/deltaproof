@@ -1,0 +1,326 @@
+{
+  "differences": 120,
+  "estimate": 168,
+  "level": 1,
+  "failed_partitions": 0,
+  "cost": {
+    "bytes": 260496,
+    "round_trips": 2,
+    "rows_rescanned": 0
+  },
+  "missing_in_target": {
+    "count": 20,
+    "keys": [
+      {
+        "table": "lineitem",
+        "l_orderkey": 11655,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11680,
+        "l_linenumber": 7
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11681,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11681,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11681,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11681,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11681,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11682,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11682,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11682,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 4
+      }
+    ]
+  },
+  "extra_in_target": {
+    "count": 40,
+    "keys": [
+      {
+        "table": "lineitem",
+        "l_orderkey": 18277,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18277,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18277,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18278,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18279,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18279,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18279,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18279,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18279,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18279,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18304,
+        "l_linenumber": 7
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18305,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18305,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 18305,
+        "l_linenumber": 3
+      }
+    ]
+  },
+  "value_mismatch": {
+    "count": 60,
+    "keys": [
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11683,
+        "l_linenumber": 7
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11684,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11684,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11684,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11684,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11684,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11685,
+        "l_linenumber": 7
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11686,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11686,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11686,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11686,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 11687,
+        "l_linenumber": 1
+      }
+    ]
+  }
+}

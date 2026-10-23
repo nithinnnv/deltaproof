@@ -1,0 +1,11 @@
+120 differing keys
+  missing_in_target: 20
+    table=lineitem l_orderkey=11655 l_linenumber=3
+    ... 19 more (use --limit -1 or --json)
+  extra_in_target: 40
+    table=lineitem l_orderkey=18277 l_linenumber=2
+    ... 39 more (use --limit -1 or --json)
+  value_mismatch: 60
+    table=lineitem l_orderkey=11683 l_linenumber=5
+    ... 59 more (use --limit -1 or --json)
+compared 260,496 bytes of sketch in 2 round trips; rescanned 0 rows

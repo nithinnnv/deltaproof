@@ -1,0 +1,7 @@
+# TPC-H lineitem, as loaded by bench/tpch_e2e.py into PostgreSQL (source) and Cassandra (target).
+[[table]]
+name = "lineitem"
+key = ["l_orderkey", "l_linenumber"]
+columns = """l_partkey:i l_suppkey:i l_quantity:d2 l_extendedprice:d2 l_discount:d2 l_tax:d2
+  l_returnflag:c l_linestatus:c l_shipdate:dt l_commitdate:dt l_receiptdate:dt
+  l_shipinstruct:c l_shipmode:c l_comment:t"""
