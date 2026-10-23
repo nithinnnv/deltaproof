@@ -35,6 +35,42 @@ deltaproof diff   --spec lineitem.toml pg.npz cs.npz
 `--max-differences` keeps the files small (232 KB for 600,000 rows at 1,000); if more differences
 turn up, `diff` compares the stores exactly when given `--source` and `--target`.
 
+Scans run in parallel (`--workers N`, before the subcommand; default up to 8): PostgreSQL tables
+are split by block range and read from one exported snapshot, Cassandra tables by token range.
+
+### Diagnosing differences
+
+```sh
+deltaproof verify --spec lineitem.toml --source ... --target ... --json --limit -1 > report.json
+deltaproof inspect --spec lineitem.toml --source ... --target ... report.json
+```
+
+`inspect` reads each reported key from both stores and prints the columns whose canonical values
+differ, with both values (`--json` for machine-readable output). Formatting-only differences
+such as `CHAR` padding or decimal scale are not differences and are not shown.
+
+The `--json` report of `verify` and `diff`:
+
+```json
+{
+  "differences": 120, "estimate": 168, "level": 1, "failed_partitions": 0,
+  "cost": {"bytes": 260496, "round_trips": 2, "rows_rescanned": 0},
+  "missing_in_target": {"count": 20, "keys": [{"table": "lineitem", "l_orderkey": 11655, "l_linenumber": 3}]},
+  "extra_in_target":   {"count": 40, "keys": ["..."]},
+  "value_mismatch":    {"count": 60, "keys": ["..."]}
+}
+```
+
+Exit status: 0 when the stores match, 1 when they differ, 2 when verification could not complete
+(for example, an unreachable store), so `verify` can gate a cutover script or CI job.
+
+### Keys
+
+Key columns are integers unless typed: `key = ["region:c", "account:t"]`. Up to four integer key
+columns below 2^30 are packed into the 128-bit key directly. Any other key (text, more columns,
+or `hash_key = true` for wide integers) is hashed into it with BLAKE2b, and reported keys are
+mapped back to their values with a key-only scan of the stores.
+
 ## Layout
 
 | Path | What it is |

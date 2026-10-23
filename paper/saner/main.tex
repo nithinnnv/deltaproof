@@ -26,7 +26,7 @@ nithin.nnv@gmail.com}}
 \maketitle
 
 \begin{abstract}
-When a system is re-engineered onto a different database, for example from PostgreSQL to Cassandra, its owners must show that the migrated data matches the original before they cut over. Existing tools compare row counts and aggregates, which miss value errors, or compare every row, which costs a full read of both databases and fails when the two stores order and encode records differently. \sys{} is an open-source command-line tool and Python library that reports the exact keys that are missing, extra or different between two databases. A canonical encoder makes logically equal records hash identically across stores, and each store is summarized by a small sketch built from invertible Bloom lookup tables, whose comparison costs bytes proportional to the number of differences rather than the size of the tables. Sketches can be built next to each store and compared anywhere, and they can be maintained from a change stream while the migration is live. On TPC-H \texttt{lineitem} loaded into PostgreSQL and Cassandra, \sys{} found every injected fault with no false positives while exchanging 260\,KB for 6 million rows; a checksum of the drivers' raw values flagged every row. Tool: \repo{}.
+When a system is re-engineered onto a different database, for example from PostgreSQL to Cassandra, its owners must show that the migrated data matches the original before they cut over. Existing tools compare row counts and aggregates, which miss value errors, or compare every row, which fails when the two stores order and encode records differently. \sys{} is an open-source command-line tool and Python library that reports the exact keys that are missing, extra or different between two databases, and then shows which columns differ for each. A canonical encoder makes logically equal records hash identically across stores; each store is summarized by a sketch built from invertible Bloom lookup tables, whose comparison costs bytes proportional to the number of differences rather than the size of the tables; and parallel, snapshot-consistent scans build the sketches. On TPC-H \texttt{lineitem} loaded into PostgreSQL and Cassandra, \sys{} found every injected fault with no false positives while exchanging 260\,KB for 6 million rows, where a checksum of the drivers' raw values flagged every row. Tool: \repo{}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -34,21 +34,21 @@ data migration, reengineering, data validation, set reconciliation, NoSQL
 \end{IEEEkeywords}
 
 \section{Introduction}
-Moving a system's data to a different database is a common reengineering step: a relational store is replaced by a wide-column store to scale writes, or a legacy schema is rebuilt in a new one. The migration is complete only when the target provably holds the same data as the source. In practice teams check row counts or column sums, which pass when a value is rounded, a timestamp is shifted or a lost row is offset by a duplicate, or they read and compare every row, which loads both production databases and grows with table size. Key-range checksum tools such as data-diff~\cite{datadiff} and pt-table-checksum~\cite{ptchecksum} reduce transfer but require both stores to scan in the same key order, which hash-partitioned stores such as Cassandra~\cite{lakshman2010} do not provide.
+Moving a system's data to a different database is a common reengineering step: a relational store is replaced by a wide-column store to scale writes, or a legacy schema is rebuilt in a new one. The migration is complete only when the target provably holds the same data as the source. In practice teams check row counts or column sums, which pass when a value is rounded, a timestamp is shifted or a lost row is offset by a duplicate, or they read and compare every row. Key-range checksum tools such as data-diff~\cite{datadiff} and pt-table-checksum~\cite{ptchecksum} reduce transfer but require both stores to scan in the same key order, which hash-partitioned stores such as Cassandra~\cite{lakshman2010} do not provide.
 
-Two problems make heterogeneous verification hard. First, the same logical record has different physical forms: PostgreSQL returns \texttt{CHAR(25)} values padded with spaces and Cassandra returns them trimmed; one driver returns a \texttt{date}, the other its own date type; decimals, time zones and timestamp precision differ. A checksum over raw values reports nearly every row as different. Second, the useful answer is the list of differing keys, which is usually tiny compared with the tables.
+Two problems make heterogeneous verification hard. First, the same logical record has different physical forms: PostgreSQL returns \texttt{CHAR(25)} values padded with spaces and Cassandra returns them trimmed; one driver returns a \texttt{date}, the other its own date type; decimals, time zones and timestamp precision differ. A checksum over raw values reports nearly every row as different. Second, the useful answer is the list of differing keys and what differs in them, which is usually tiny compared with the tables.
 
-\sys{} addresses both. It treats verification as set reconciliation~\cite{eppstein2011}: each store becomes a set of (key, value digest) elements under a canonical encoding, and the tool computes the symmetric difference of the two sets. It contributes:
+\sys{} treats verification as set reconciliation~\cite{eppstein2011}: each store becomes a set of (key, value digest) elements under a canonical encoding, and the tool computes the symmetric difference of the two sets. This paper covers verification of a quiesced snapshot, such as before cutover or after a backfill. It contributes:
 \begin{itemize}
-\item a command-line tool that, given a short table specification and two connection URLs, prints every missing, extra and mismatched key (Section~\ref{sec:use});
-\item a canonical record encoder for relational and wide-column stores (Section~\ref{sec:arch});
-\item a sketch format, built from invertible Bloom lookup tables (IBLTs)~\cite{goodrich2011}, that can be produced next to each store, shipped as a file, and compared in bytes proportional to the number of differences;
-\item an evaluation on PostgreSQL and Cassandra with injected faults (Section~\ref{sec:eval}).
+\item a command-line tool that, given a short table specification and two connection URLs, prints every missing, extra and mismatched key, and a diagnosis command that shows the differing columns (Section~\ref{sec:use});
+\item a canonical record encoder for relational and wide-column stores, with keys of any type (Section~\ref{sec:arch});
+\item a sketch format, built from invertible Bloom lookup tables (IBLTs)~\cite{goodrich2011}, that can be produced next to each store and compared in bytes proportional to the number of differences, built by parallel scans;
+\item an evaluation on PostgreSQL and Cassandra with injected faults, including scan scaling and the cost of a wrong size estimate (Section~\ref{sec:eval}).
 \end{itemize}
 
 \section{Using \sys{}}\label{sec:use}
 \subsection{Describing the tables}
-The user writes a specification that names each table's primary key and its non-key columns with a logical type. The type, not the stores' physical types, decides when two values are equal: \texttt{d2} is an exact decimal at scale 2, \texttt{c} a fixed-width string whose padding is ignored, \texttt{dt} a calendar date, \texttt{ts} a UTC timestamp at milliseconds, and a trailing \texttt{?} allows nulls. Listing~\ref{lst:spec} shows the specification used for TPC-H \texttt{lineitem}. One specification can list many tables; they are compared together.
+The user writes a specification that names each table's primary key and its non-key columns with a logical type. The type, not the stores' physical types, decides when two values are equal: \texttt{d2} is an exact decimal at scale 2, \texttt{c} a fixed-width string whose padding is ignored, \texttt{t} text, \texttt{dt} a calendar date, \texttt{ts} a UTC timestamp at milliseconds, and a trailing \texttt{?} allows nulls. Key columns are integers unless typed, e.g.\ \texttt{key = ["region:c", "account:t"]}. Listing~\ref{lst:spec} shows the specification for TPC-H \texttt{lineitem}. One specification can list many tables; they are compared together.
 
 \begin{lstlisting}[caption={Table specification (\texttt{lineitem.toml})}, label={lst:spec}]
 [[table]]
@@ -61,13 +61,13 @@ columns = """l_partkey:i l_suppkey:i l_quantity:d2
   l_shipmode:c l_comment:t"""
 \end{lstlisting}
 
-\subsection{Running a comparison}
-The simplest use compares two live databases in one command (Listing~\ref{lst:run}, run with \texttt{--limit 1}). When the stores sit in different networks, \texttt{deltaproof sketch} runs next to each store and writes a sketch file, and \texttt{deltaproof diff} compares the two files anywhere. A file holding every size of sketch is about 20 bytes per row, little less than the rows' digests themselves; with \texttt{--max-differences 1000} it holds only the sizes needed for up to 1{,}000 differences, 232\,KB for 600{,}000 rows. If more differences turn up, \texttt{diff} falls back to an exact comparison of the stores named by \texttt{--source} and \texttt{--target}. The exit status is 0 when the stores match and 1 otherwise, so the command can gate a cutover script or a CI job, and \texttt{--json} prints a machine-readable report.
+\subsection{Finding the differences}
+One command compares two databases (Listing~\ref{lst:run}). When the stores sit in different networks, \texttt{deltaproof sketch} runs next to each store and writes a sketch file, and \texttt{deltaproof diff} compares the files anywhere. A file holding every size of sketch is about 20 bytes per row, little less than the rows' digests; with \texttt{--max-differences 1000} it holds only the sizes needed for up to 1{,}000 differences, 232\,KB for 600{,}000 rows. If more differences turn up, \texttt{diff} falls back to an exact comparison of the stores named by \texttt{--source} and \texttt{--target}.
 
-\begin{lstlisting}[caption={Comparing PostgreSQL with Cassandra}, label={lst:run}]
+\begin{lstlisting}[caption={Comparing PostgreSQL with Cassandra (\texttt{--limit 1})}, label={lst:run}]
 $ deltaproof verify --spec lineitem.toml \
     --source postgresql://user:pw@pg:5432/tpch \
-    --target cassandra://cass:9042/tpch
+    --target cassandra://cass:9042/tpch --limit 1
 120 differing keys
   missing_in_target: 20
     table=lineitem l_orderkey=11655 l_linenumber=3
@@ -82,15 +82,21 @@ compared 260,496 bytes of sketch in 2 round trips;
 rescanned 0 rows
 \end{lstlisting}
 
-\subsection{Verifying while the migration is live}
-The library exposes the same sketches as objects that accept inserts, updates and deletes. Fed from a change-data-capture stream on the source and from the replicator's writes on the target, they stay equal to sketches rebuilt from scratch, so a migration can be checked every few seconds without rescanning. A watermark and a version check on the target separate writes still in flight from real divergence; this mode, its correctness argument and its evaluation under a TPC-C workload are the subject of a companion paper, and the scripts that run it are in the repository.
+\subsection{Diagnosing and fixing them}
+With \texttt{--json}, the report is one object: \texttt{differences}, the estimate and sketch level used, a \texttt{cost} object (bytes, round trips, rows rescanned), and for each class (\texttt{missing\_in\_target}, \texttt{extra\_in\_target}, \texttt{value\_mismatch}) a \texttt{count} and a list of keys, each with its table and key columns. \texttt{deltaproof inspect} takes that report, reads each key from both stores and prints the columns whose canonical values differ (Listing~\ref{lst:inspect}); differences that are only formatting, such as padding or decimal scale, are not shown, because they are not differences. Its \texttt{--json} output lists, per key, the class, whether each store has the row, and each differing column with both values.
+
+\begin{lstlisting}[caption={Diagnosing reported keys}, label={lst:inspect}]
+INSPECT-PLACEHOLDER
+\end{lstlisting}
+
+A typical repair loop exports the reported keys, re-copies those rows with the migration's own backfill or deletes the extra ones, and runs \texttt{verify} again. For automation, the exit status is 0 when the stores match, 1 when they differ and 2 when verification could not complete (for example, an unreachable store), so a cutover script can run \texttt{deltaproof verify} as a gate and attach the JSON report to the change record.
 
 \section{Architecture}\label{sec:arch}
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[font=\footnotesize, box/.style={draw, rounded corners=2pt, minimum width=1.9cm, minimum height=0.8cm, align=center}, >={Stealth[length=2mm]}]
-\node[box] (pg) {Source store\\[-1pt]\scriptsize adapter};
-\node[box, below=0.5cm of pg] (cs) {Target store\\[-1pt]\scriptsize adapter};
+\node[box] (pg) {Source store\\[-1pt]\scriptsize parallel scan};
+\node[box, below=0.5cm of pg] (cs) {Target store\\[-1pt]\scriptsize parallel scan};
 \node[box, right=0.45cm of pg] (ce) {Canonical\\[-1pt]encoder};
 \node[box, right=0.45cm of cs] (ct) {Canonical\\[-1pt]encoder};
 \node[box, right=0.45cm of ce] (ss) {Sketch\\[-1pt]\scriptsize ladder};
@@ -105,13 +111,11 @@ The library exposes the same sketches as objects that accept inserts, updates an
 \label{fig:arch}
 \end{figure}
 
-Fig.~\ref{fig:arch} shows the pipeline. The library and command line are about 1{,}200 lines of Python with NumPy; baselines and benchmarks are separate.
+Fig.~\ref{fig:arch} shows the pipeline. The library, scanners and command line are about 1{,}400 lines of Python with NumPy; baselines and benchmarks are separate.
 
-\emph{Adapters} read rows through each database's driver (psycopg~3 for PostgreSQL, the DataStax driver for Cassandra) and convert driver values to logical Python values; a new store needs only an adapter that yields rows as dictionaries.
+\emph{Scanning.} By default each store is read by up to eight worker processes, each with its own connection, reading one slice and encoding it locally; only the encoded elements, 24 bytes per row, return to the coordinator. PostgreSQL tables are sliced by physical block range, using TID range scans, so slicing does not depend on key types or skew; the coordinator exports a repeatable-read snapshot and every worker imports it, so all slices read one consistent state. Cassandra tables are sliced by token range over the table's partition key, read from cluster metadata. \texttt{--workers 1} uses a single cursor. A new store needs an adapter that yields rows as dictionaries, and optionally a slicing rule.
 
-\emph{The canonical encoder} turns a row into an element: a 128-bit key and a 64-bit digest of the values. Decimals become integers at the declared scale, so \texttt{10.5} and \texttt{10.50} agree; timestamps become UTC at the declared unit, so a store that keeps microseconds agrees with one that keeps milliseconds; text is Unicode NFC, hashed with BLAKE2b; fixed-width strings drop their padding; floats are compared by their IEEE-754 bits; and nulls carry their own tag, so null, the empty string and zero differ. Composite keys of up to four integer columns are packed with an 8-bit table tag, which lets one sketch cover many tables and lets a reported key be turned back into table and column values.
-
-Table~\ref{tab:forms} lists differences between the two drivers' forms of the same logical value that the encoder absorbs. On \texttt{lineitem}, the first two alone made a raw-value checksum flag every row.
+\emph{The canonical encoder} turns a row into an element: a 128-bit key and a 64-bit digest of the values. Decimals become integers at the declared scale, so \texttt{10.5} and \texttt{10.50} agree; timestamps become UTC at the declared unit; text is Unicode NFC, hashed with BLAKE2b; fixed-width strings drop their padding; floats compare by their IEEE-754 bits; and nulls carry their own tag, so null, the empty string and zero differ. Table~\ref{tab:forms} lists differences between the two drivers' forms of the same value that the encoder absorbs; on \texttt{lineitem}, the first two alone made a raw-value checksum flag every row.
 
 \begin{table}[t]
 \caption{Same value, different driver forms, one canonical form}
@@ -130,14 +134,14 @@ decimal & column scale & value's scale & scaled integer\\
 \end{tabular}
 \end{table}
 
-\emph{Sketches.} An IBLT is an array of cells; each element is added to three cells, and each cell keeps a count and XOR sums of keys, digests and a checksum~\cite{goodrich2011}. Subtracting the target's IBLT from the source's cancels every common element, and \emph{peeling} cells that hold a single element recovers the difference. The difference must fit the IBLT, but its size is unknown in advance, so each store keeps a \emph{ladder} of IBLTs at capacities $64\cdot8^i$ up to one eighth of the row count, split by key hash into partitions of about 256 differences each, plus a 32-level strata estimator~\cite{eppstein2011}. The comparison reads the estimator first, then the smallest level with 25\% headroom over the estimate. A partition that fails to peel is compared row by row, so an undersized estimate costs time, never correctness. The ladder adds about 17 bytes per row.
+\emph{Keys.} The 128-bit key carries an 8-bit table tag, so one sketch covers many tables. Keys of up to four integer columns below $2^{30}$ are packed directly and decode back to their values. Any other key, such as a text or alphanumeric natural key, a key of more columns, or wide integers, is hashed with BLAKE2b into the remaining 120 bits from its canonical parts, length-prefixed so that \texttt{("E","UACME")} and \texttt{("EU","ACME")} differ. Distinct keys then collide with probability about $n^2/2^{121}$. The limit is therefore one of the packing, not of the method: a hashed key cannot be decoded from the sketch, so the tool maps reported hashes back to key values with a key-only scan of the stores.
 
-\emph{Engineering choices.} Partitioning by key hash rather than key range makes the result independent of each store's scan order. Building every ladder level at once costs little because an update touches three cells per level, and it lets one comparison pick the right size after seeing the estimate. Sketch files of two stores with different row counts remain comparable, because a smaller ladder is a prefix of a larger one. The vectorized NumPy path and the scalar path used while peeling are bit-identical, which the tests check.
+\emph{Sketches.} An IBLT is an array of cells; each element is added to three cells, and each cell keeps a count and XOR sums of keys, digests and a checksum~\cite{goodrich2011}. Subtracting the target's IBLT from the source's cancels every common element, and \emph{peeling} cells that hold a single element recovers the difference. Peeling succeeds with high probability while a table has comfortably more cells than differences (asymptotically about 1.23 cells per difference); beyond that it stalls with cells left over, which the tool detects. The difference size is unknown in advance, so each store keeps a \emph{ladder} of IBLTs at capacities $64\cdot8^i$ up to one eighth of the row count, split by key hash into partitions of about 256 differences each, plus a strata estimator~\cite{eppstein2011}. The comparison reads the estimator first, then the smallest level with 25\% headroom over the estimate. A partition that fails to peel is compared row by row; if no level is large enough, the whole table is compared. An inaccurate estimate therefore costs bandwidth and time, never correctness (Section~\ref{sec:eval}). The ladder adds about 17 bytes per row.
 
 \section{Evaluation}\label{sec:eval}
 We ran PostgreSQL~16.4 and Cassandra~4.1.6 as single nodes in Docker on one Apple M1 Pro laptop (10 cores, 16\,GB), with Python~3.13. Faults were injected with SQL and CQL statements, and the ground truth was the exact difference of full scans of both stores.
 
-\emph{Does it find the differences?} On a 200{,}000-row synthetic ledger with 120 faults of six classes, and on TPC-H \texttt{lineitem} at scale factors 0.1 and 1 with 120 faults (lost writes, decimal precision, shifted dates, corrupted text, lost deletes, phantom rows), \sys{} reported exactly the injected keys, with no false positives (Table~\ref{tab:e2e}). A digest of the drivers' raw values, without canonical encoding, flagged 99.9\% of ledger rows and every \texttt{lineitem} row: the stores format timestamps, padded strings and dates differently. TPC-H data was generated with \texttt{dbgen}; these are not TPC-H benchmark results. At SF~0.1 we also ran the \texttt{deltaproof} command itself in all three ways (one command; files with every size; files limited to 1{,}000 differences), and each printed the same 120 keys.
+\emph{Does it find the differences?} On a 200{,}000-row synthetic ledger with 120 faults of six classes, and on TPC-H \texttt{lineitem} at scale factors 0.1 and 1 with 120 faults (lost writes, decimal precision, shifted dates, corrupted text, lost deletes, phantom rows), \sys{} reported exactly the injected keys, with no false positives (Table~\ref{tab:e2e}). A digest of the drivers' raw values flagged 99.9\% of ledger rows and every \texttt{lineitem} row. TPC-H data was generated with \texttt{dbgen}; these are not TPC-H benchmark results. At SF~0.1 we ran the \texttt{deltaproof} command itself in all three ways (one command; files with every size; files limited to 1{,}000 differences), and each printed the same 120 keys.
 
 \begin{table}[t]
 \caption{End-to-end runs, PostgreSQL vs.\ Cassandra}
@@ -160,7 +164,7 @@ Raw-value digest flags & 99.9\% & 100\% & 100\%\\
 \end{tabular}
 \end{table}
 
-\emph{What does it cost?} Comparing sketches took 12\,ms for the ledger and 0.16\,s for six million rows. The cost of a comparison follows the number of differences (Fig.~\ref{fig:bytes}): in a controlled in-process experiment with $10^7$ ledger rows and about 1{,}100 differences, \sys{} exchanged 0.78\,MB, while a Merkle tree exchanged 32\,MB, range-checksum bisection 280\,MB and a full comparison 480\,MB, each reporting the same keys.
+\emph{What does a comparison cost?} Comparing sketches took 12\,ms for the ledger and 0.16\,s for six million rows. The cost follows the number of differences (Fig.~\ref{fig:bytes}): in an in-process experiment with $10^7$ ledger rows and about 1{,}100 differences, \sys{} exchanged 0.78\,MB, while a Merkle tree exchanged 32\,MB, range-checksum bisection 280\,MB and a full comparison 480\,MB, each reporting the same keys.
 
 \begin{figure}[t]
 \centering
@@ -177,18 +181,49 @@ Raw-value digest flags & 99.9\% & 100\% & 100\%\\
 \end{tikzpicture}
 \caption{Bytes exchanged to find the differences among $10^7$ rows (log--log).}
 \label{fig:bytes}
-\end{figure} Building a sketch requires one scan of each store, the same as a full comparison; the savings are in transfer and in later checks, since a sketch maintained from a change stream needs no further scans. In Python, scanning, encoding and sketching \texttt{lineitem} took 18\,s on PostgreSQL and 28\,s on Cassandra at SF~0.1, and 243\,s and 495\,s at SF~1; this dominates the run time and is the first target for optimization.
+\end{figure}
 
-\emph{Live mode.} Under a TPC-C workload replicated from PostgreSQL to Cassandra with injected drops and corruptions, sketches maintained from the change stream equalled full-scan rebuilds in every run, and checks every 10\,s reported no false differences; the companion paper reports this experiment in full.
+\emph{How does scanning scale?} Building a sketch needs one scan of each store; profiling the single-cursor scan at SF~0.1 showed that Python encoding, not fetching, took most of the time (15\,s of 18\,s on PostgreSQL). Parallel slices spread both. Table~\ref{tab:scan} shows scan and encode time by worker count; every configuration produced exactly the same elements as the single cursor. SCAN-SF1-SENTENCE Scan time is linear in rows per worker, so larger tables need more workers or machines; because IBLTs are linear, sketches of slices can also be built where the slices are read and summed, which would keep the coordinator's memory independent of table size (our implementation ships elements, 24 bytes per row). Computing digests inside the database would remove the transfer, but needs the canonical encoding as a user-defined function in every store.
+
+\begin{table}[t]
+\caption{Scan and encode time (s), \texttt{lineitem} SF 0.1, by workers}
+\label{tab:scan}
+\centering\footnotesize
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Workers & 1 & 2 & 4 & 8\\
+\midrule
+PostgreSQL & 17.5 & 9.2 & 5.1 & 3.0\\
+Cassandra & 27.1 & 13.5 & 7.2 & 4.1\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{What does a wrong estimate cost?} We forced the estimate used to pick the sketch size to between $1/16$ and $16$ times the strata estimate, on $10^6$ ledger rows with 1{,}125 and 11{,}250 differing keys (Table~\ref{tab:sens}). Every run returned exactly the differing keys. Within a factor of 4 either way, a comparison exchanged at most 38.1\,MB and rescanned at most 15{,}791 rows. A 16-fold underestimate overloaded every partition, so nearly all 2 million rows were rescanned; a 16-fold overestimate at 11{,}250 differences exceeded the largest level and fell back to a full comparison. Both cost 48\,MB and about half a second here, the price of a full comparison. The strata estimate itself counts elements, so it reads about 1.6 times the number of differing keys: a changed value is two elements.
+
+\begin{table}[t]
+\caption{Cost of a forced estimate, $10^6$ rows: MB / rows rescanned}
+\label{tab:sens}
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Factor & 1/16 & 1 & 4 & 16\\
+\midrule
+1{,}125 keys & 48.3 / 2.0M & 0.78 / 0 & 4.9 / 0 & 38.0 / 0\\
+11{,}250 keys & 48.7 / 2.0M & 5.3 / 15.8K & 38.1 / 2.0K & 48.2 / 2.0M\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Related Tools}
-\emph{Row counts and aggregates}, as offered by several migration services, are cheap but miss value faults. AWS DMS data validation~\cite{awsdms} compares rows between a migration task's source and target. Google's Data Validation Tool~\cite{dvt} compares counts, aggregates and row hashes across many databases, though not Cassandra. data-diff~\cite{datadiff} and pt-table-checksum~\cite{ptchecksum} checksum key ranges and narrow down mismatches, which needs both sides to scan in key order. Cassandra repairs replicas with Merkle trees~\cite{lakshman2010}, within one database and one encoding. \sys{} differs in comparing stores with different encodings and orders, in reporting exact keys from a transfer proportional to the number of differences, and in sketches that can be maintained from a change stream. IBLTs and strata estimators come from network set reconciliation~\cite{goodrich2011,eppstein2011}; PinSketch~\cite{minisketch} sends fewer bytes at a higher computational cost, and the encoder and pipeline would work with it as well.
+\emph{Row counts and aggregates}, as offered by several migration services, are cheap but miss value faults. AWS DMS data validation~\cite{awsdms} compares rows between a migration task's source and target. Google's Data Validation Tool~\cite{dvt} compares counts, aggregates and row hashes across many databases, though not Cassandra. data-diff~\cite{datadiff} and pt-table-checksum~\cite{ptchecksum} checksum key ranges and narrow down mismatches, which needs both sides to scan in key order. Cassandra repairs replicas with Merkle trees~\cite{lakshman2010}, within one database and one encoding. \sys{} differs in comparing stores with different encodings and orders, and in reporting exact keys from a transfer proportional to the number of differences. IBLTs and strata estimators come from network set reconciliation~\cite{goodrich2011,eppstein2011}; PinSketch~\cite{minisketch} sends fewer bytes at a higher computational cost, and the encoder and pipeline would work with it as well.
 
 \section{Limitations}
-Keys must be integer columns (up to four, each below $2^{30}$) or UUIDs. Tables without a primary key cannot be compared key by key. The table specification must match the migration's intended mapping; if both sides were encoded wrongly in the same way, a mismatch would be hidden, so specifications need their own tests. Adapters exist for PostgreSQL and Cassandra only. Scans are row-by-row Python and therefore slow on large tables. A run with no differences still exchanges the 187\,KB estimator.
+\sys{} verifies a quiesced snapshot; a store being written during the scan yields a difference that includes the writes in flight. Because IBLTs are linear, the library also accepts inserts, updates and deletes to keep sketches current from a change stream, but this paper does not evaluate that mode. Tables without a primary key cannot be compared key by key. The table specification must match the migration's intended mapping; if both sides were encoded wrongly in the same way, a mismatch would be hidden, so specifications need their own tests. Adapters exist for PostgreSQL and Cassandra only. A run with no differences still exchanges the 187\,KB estimator.
 
 \section{Conclusion and Availability}
-\sys{} turns migration verification into a short specification and one command, and returns the exact differing keys from two stores that encode and order data differently. The tool, tests, benchmark scripts, Docker setup and all result files are available under the Apache~2.0 license at \repo{}.
+\sys{} turns migration verification into a short specification and two commands: one returns the exact differing keys from stores that encode and order data differently, and the other shows what differs in each. The tool, tests, benchmark scripts, Docker setup and all result files are available under the Apache~2.0 license at \repo{}.
 
 \section*{Acknowledgment}
 The author used Claude (Anthropic) to write the tool's implementation, tests and benchmark scripts and to draft and edit the text of all sections of this paper, including the figure and tables. All results come from running that code. The author reviewed and takes responsibility for all content.
