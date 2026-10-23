@@ -210,9 +210,34 @@ def rq5(scale: str, seed: int) -> None:
     write("rq5_robustness", rows)
 
 
+def rq6(scale: str, seed: int) -> None:
+    """Sensitivity to a wrong difference estimate: cost of the fallback, and correctness."""
+    n = 1_000_000
+    rows = []
+    led = generate(n, np.random.default_rng(seed))
+    for d in (1_000, 10_000):
+        per = {c: d // len(FAULT_CLASSES) for c in FAULT_CLASSES}
+        per["precision"] += d - sum(per.values())
+        inj = inject(led, per, np.random.default_rng(seed + d))
+        truth = inj.all_keys
+        a, b, _ = build_sketches(inj, n)
+        rescan = table_rescan(inj.source, inj.target)
+        true_est = verify(a, b, rescan).estimate
+        for factor in (1 / 16, 1 / 4, 1 / 2, 1, 2, 4, 16):
+            est = max(1, round(true_est * factor))
+            t0 = time.perf_counter()
+            rep = verify(a, b, rescan, estimate=est)
+            rows.append({"n": n, "d": len(truth), "strata_estimate": true_est, "factor": factor, "estimate_used": est,
+                         "level": rep.level, "failed_partitions": rep.failed_partitions, "bytes": rep.cost.bytes,
+                         "rows_rescanned": rep.cost.rows_scanned, "round_trips": rep.cost.round_trips,
+                         "seconds": round(time.perf_counter() - t0, 3), "correct": rep.keys == truth})
+            print(f"rq6 d={d} factor={factor}: done", flush=True)
+    write("rq6_estimate_sensitivity", rows)
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("experiments", nargs="+", choices=["rq1", "rq2", "rq3", "rq4", "rq5"])
+    p.add_argument("experiments", nargs="+", choices=["rq1", "rq2", "rq3", "rq4", "rq5", "rq6"])
     p.add_argument("--scale", choices=["small", "full"], default="small")
     p.add_argument("--seed", type=int, default=42)
     args = p.parse_args()

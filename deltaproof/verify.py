@@ -68,9 +68,13 @@ def _rescan_cost(cost: Cost, s: Table, t: Table) -> None:
     cost.bytes += (len(s) + len(t)) * ELEMENT_BYTES
 
 
-def verify(source: Sketch, target: Sketch, rescan: Rescan, headroom: float = 1.25) -> Report:
+def verify(source: Sketch, target: Sketch, rescan: Rescan, headroom: float = 1.25,
+           estimate: int | None = None) -> Report:
+    """`estimate` replaces the strata estimate (for sensitivity experiments); the result stays exact."""
     cost = Cost(bytes=source.strata.nbytes + target.strata.nbytes, round_trips=1)
     est, exact = source.strata.estimate(target.strata)
+    if estimate is not None:
+        est, exact = estimate, None
     if exact is not None:
         return Report(*classify(exact.only_a, exact.only_b), cost=cost, estimate=est, level=-1)
 
