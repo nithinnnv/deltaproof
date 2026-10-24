@@ -29,7 +29,7 @@ nithin.nnv@gmail.com}
 \maketitle
 
 \begin{abstract}
-When a system is re-engineered onto a different database, for example from PostgreSQL to Cassandra, its owners must show that the migrated data matches the original before they cut over. Existing tools compare row counts and aggregates, which miss value errors, or compare every row, which fails when the two stores order and encode records differently. \sys{} is an open-source command-line tool and Python library that reports the exact keys that are missing, extra or different between two databases, and then shows which columns differ for each. A canonical encoder makes logically equal records hash identically across stores; each store is summarized by a sketch built from invertible Bloom lookup tables, whose comparison costs bytes proportional to the number of differences rather than the size of the tables; and parallel, snapshot-consistent scans build the sketches. On TPC-H \texttt{lineitem} loaded into PostgreSQL and Cassandra, \sys{} found every injected fault with no false positives while exchanging 260\,KB for 6 million rows, where a checksum of the drivers' raw values flagged every row. Tool: \repo{}.
+When a system is re-engineered onto a different database, for example from PostgreSQL to Cassandra, its owners must show that the migrated data matches the original before they cut over. Existing tools compare row counts and aggregates, which miss value errors, or compare every row, which fails when the two stores order and encode records differently. \sys{} is an open-source command-line tool and Python library that reports the exact keys that are missing, extra or different between two databases, and then shows which columns differ for each. A canonical encoder makes logically equal records hash identically across stores; each store is summarized by a sketch built from invertible Bloom lookup tables, whose comparison costs bytes proportional to the number of differences rather than the size of the tables; and parallel, snapshot-consistent scans build the sketches. On TPC-H \texttt{lineitem} loaded into PostgreSQL and Cassandra at up to 60 million rows, \sys{} found every injected fault with no false positives while exchanging 260\,KB, where a checksum of the drivers' raw values flagged every row. Tool: \repo{}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -156,30 +156,30 @@ decimal & column scale & value's scale & scaled integer\\
 \section{Evaluation}\label{sec:eval}
 We ran PostgreSQL~16.4 and Cassandra~4.1.6 as single nodes in Docker on one Apple M1 Pro laptop (10 cores, 16\,GB), with Python~3.13. Faults were injected with SQL and CQL statements, and the ground truth was the exact difference of full scans of both stores.
 
-\emph{Does it find the differences?} On a 200{,}000-row synthetic ledger with 120 faults of six classes, and on TPC-H \texttt{lineitem} at scale factors 0.1 and 1 with 120 faults (lost writes, decimal precision, shifted dates, corrupted text, lost deletes, phantom rows), \sys{} reported exactly the injected keys, with no false positives (Table~\ref{tab:e2e}). A digest of the drivers' raw values flagged 99.9\% of ledger rows and every \texttt{lineitem} row. TPC-H data was generated with \texttt{dbgen}; these are not TPC-H benchmark results. At SF~0.1 we ran the \texttt{deltaproof} command itself in all three ways (one command; files with every size; files limited to 1{,}000 differences), and each printed the same 120 keys.
+\emph{Does it find the differences?} On a 200{,}000-row synthetic ledger with 120 faults of six classes, and on TPC-H \texttt{lineitem} at scale factors 0.1, 1 and 10 with 120 faults (lost writes, decimal precision, shifted dates, corrupted text, lost deletes, phantom rows), \sys{} reported exactly the injected keys, with no false positives (Table~\ref{tab:e2e}). A digest of the drivers' raw values flagged 99.9\% of ledger rows and every \texttt{lineitem} row at SF~0.1 and 1 (at SF~10 we did not compute it, as it needs every raw row in memory). The SF~10 sketch was sized for up to 100{,}000 differences (22\,MB per store), and the exact difference of the two 60-million-row scans equalled both the injected set and \sys{}'s answer. TPC-H data was generated with \texttt{dbgen}; these are not TPC-H benchmark results. At SF~0.1 we ran the \texttt{deltaproof} command itself in all three ways (one command; files with every size; files limited to 1{,}000 differences), and each printed the same 120 keys.
 
 \begin{table}[t]
 \caption{End-to-end runs, PostgreSQL vs.\ Cassandra}
 \label{tab:e2e}
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-& Ledger & \multicolumn{2}{c}{TPC-H \texttt{lineitem}}\\
-\cmidrule(l){3-4}
-& & SF 0.1 & SF 1\\
+& Ledger & \multicolumn{3}{c}{TPC-H \texttt{lineitem}}\\
+\cmidrule(l){3-5}
+& & SF 0.1 & SF 1 & SF 10\\
 \midrule
-Rows (source) & 200{,}000 & 600{,}552 & 6{,}001{,}215\\
-Injected faults & 120 & 120 & 120\\
-Found / false positives & 120 / 0 & 120 / 0 & 120 / 0\\
-Sketch bytes compared & 260\,KB & 260\,KB & 260\,KB\\
-Round trips & 2 & 2 & 2\\
-Raw-value digest flags & 99.9\% & 100\% & 100\%\\
+Rows (source) & 200{,}000 & 600{,}552 & 6{,}001{,}195 & 59{,}986{,}032\\
+Injected faults & 120 & 120 & 120 & 120\\
+Found / false pos. & 120 / 0 & 120 / 0 & 120 / 0 & 120 / 0\\
+Sketch bytes compared & 260\,KB & 260\,KB & 260\,KB & 260\,KB\\
+Round trips & 2 & 2 & 2 & 2\\
+Raw-value digest flags & 99.9\% & 100\% & 100\% & ---\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\emph{What does a comparison cost?} Comparing sketches took 12\,ms for the ledger and 0.13\,s for six million rows. The cost follows the number of differences (Fig.~\ref{fig:bytes}): in an in-process experiment with $10^7$ ledger rows and about 1{,}100 differences, \sys{} exchanged 0.78\,MB, while a Merkle tree exchanged 32\,MB, range-checksum bisection 280\,MB and a full comparison 480\,MB, each reporting the same keys.
+\emph{What does a comparison cost?} Comparing sketches took 12\,ms for the ledger, 0.13\,s for 6 million rows and 2.7\,s for 60 million. The cost follows the number of differences (Fig.~\ref{fig:bytes}): in an in-process experiment with $10^7$ ledger rows and about 1{,}100 differences, \sys{} exchanged 0.78\,MB, while a Merkle tree exchanged 32\,MB, range-checksum bisection 280\,MB and a full comparison 480\,MB, each reporting the same keys.
 
 \begin{figure}[t]
 \centering
@@ -198,7 +198,7 @@ Raw-value digest flags & 99.9\% & 100\% & 100\%\\
 \label{fig:bytes}
 \end{figure}
 
-\emph{How does scanning scale?} Building a sketch needs one scan of each store; profiling the single-cursor scan at SF~0.1 showed that Python encoding, not fetching, took most of the time (15\,s of 18\,s on PostgreSQL). Each reader already streams: PostgreSQL rows arrive through server-side cursors in batches of 10{,}000 and Cassandra rows in pages of 5{,}000, so a worker's memory does not grow with the table. Parallel slices spread fetching and encoding. Table~\ref{tab:scan} shows scan and encode time at SF~1 (6 million rows) by worker count; every configuration produced exactly the same elements as the single cursor. Eight workers cut PostgreSQL from 176\,s to 27\,s and Cassandra from 293\,s to 38\,s ($6.6\times$ and $7.8\times$). Our largest test is 6 million rows on one laptop; for hundreds of millions of rows, scan time is linear in rows per worker, so larger tables need more workers or machines; because IBLTs are linear, sketches of slices can also be built where the slices are read and summed, which would keep the coordinator's memory independent of table size (our implementation ships elements, 24 bytes per row). Computing digests inside the database would remove the transfer, but needs the canonical encoding as a user-defined function in every store.
+\emph{How does scanning scale?} Building a sketch needs one scan of each store; profiling the single-cursor scan at SF~0.1 showed that Python encoding, not fetching, took most of the time (15\,s of 18\,s on PostgreSQL). Each reader already streams: PostgreSQL rows arrive through server-side cursors in batches of 10{,}000 and Cassandra rows in pages of 5{,}000, so a worker's memory does not grow with the table. Parallel slices spread fetching and encoding. Table~\ref{tab:scan} shows scan and encode time at SF~1 (6 million rows) by worker count; every configuration produced exactly the same elements as the single cursor. Eight workers cut PostgreSQL from 176\,s to 27\,s and Cassandra from 293\,s to 38\,s ($6.6\times$ and $7.8\times$). At SF~10 (60 million rows), eight workers took 284\,s on PostgreSQL and 424\,s on Cassandra, about ten times SF~1, on a laptop that was also running both databases and swapping 7.7\,GB; building both sketches took 90\,s and the coordinator peaked at 4.4\,GB. Our largest test is 60 million rows; for hundreds of millions of rows, scan time is linear in rows per worker, so larger tables need more workers or machines; because IBLTs are linear, sketches of slices can also be built where the slices are read and summed, which would keep the coordinator's memory independent of table size (our implementation ships elements, 24 bytes per row). Computing digests inside the database would remove the transfer, but needs the canonical encoding as a user-defined function in every store.
 
 \begin{table}[t]
 \caption{Scan and encode time (s), \texttt{lineitem} SF 1, by workers}
