@@ -1,0 +1,11 @@
+metric,value
+mode,baseline
+rate,unlimited
+seconds,300
+terminals,16
+warehouses,4
+tpcc_throughput_tps,3027.78
+tpcc_goodput_tps,2536.21
+tpcc_latency_p50_ms,4.37
+tpcc_latency_p95_ms,12.95
+tpcc_latency_p99_ms,18.49
