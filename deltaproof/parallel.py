@@ -51,11 +51,13 @@ def _scan_slice(spec: TableSpec, lo: int, hi: int, pk: tuple[str, ...],
     if kind == "postgres":
         q = (f"SELECT {', '.join(cols)} FROM {spec.name} "
              f"WHERE ctid >= '({lo},0)'::tid AND ctid < '({hi},0)'::tid")
-        with conn.transaction(), conn.cursor() as cur:
-            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-            cur.execute(f"SET TRANSACTION SNAPSHOT '{snapshot}'")  # every slice sees one snapshot
-            cur.execute(q)
-            kh, kl, dg = _encode(spec, cols, cur)
+        with conn.transaction():
+            conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+            conn.execute(f"SET TRANSACTION SNAPSHOT '{snapshot}'")  # every slice sees one snapshot
+            with conn.cursor(name="deltaproof_slice") as cur:  # server-side: memory bounded per batch
+                cur.itersize = 10_000
+                cur.execute(q)
+                kh, kl, dg = _encode(spec, cols, cur)
     else:
         from cassandra.query import SimpleStatement
 
