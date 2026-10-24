@@ -1,0 +1,180 @@
+lineitem l_orderkey=3044 l_linenumber=3: missing in target
+lineitem l_orderkey=3045 l_linenumber=1: missing in target
+lineitem l_orderkey=3045 l_linenumber=2: missing in target
+lineitem l_orderkey=3046 l_linenumber=1: missing in target
+lineitem l_orderkey=3046 l_linenumber=2: missing in target
+lineitem l_orderkey=3046 l_linenumber=3: missing in target
+lineitem l_orderkey=3047 l_linenumber=1: missing in target
+lineitem l_orderkey=3047 l_linenumber=2: missing in target
+lineitem l_orderkey=3072 l_linenumber=1: missing in target
+lineitem l_orderkey=3072 l_linenumber=2: missing in target
+lineitem l_orderkey=3072 l_linenumber=3: missing in target
+lineitem l_orderkey=3072 l_linenumber=4: missing in target
+lineitem l_orderkey=3072 l_linenumber=5: missing in target
+lineitem l_orderkey=3073 l_linenumber=1: missing in target
+lineitem l_orderkey=3073 l_linenumber=2: missing in target
+lineitem l_orderkey=3073 l_linenumber=3: missing in target
+lineitem l_orderkey=3073 l_linenumber=4: missing in target
+lineitem l_orderkey=3073 l_linenumber=5: missing in target
+lineitem l_orderkey=3073 l_linenumber=6: missing in target
+lineitem l_orderkey=3073 l_linenumber=7: missing in target
+lineitem l_orderkey=4130 l_linenumber=1: extra in target
+lineitem l_orderkey=4130 l_linenumber=2: extra in target
+lineitem l_orderkey=4131 l_linenumber=1: extra in target
+lineitem l_orderkey=4131 l_linenumber=2: extra in target
+lineitem l_orderkey=4131 l_linenumber=3: extra in target
+lineitem l_orderkey=4131 l_linenumber=4: extra in target
+lineitem l_orderkey=4131 l_linenumber=5: extra in target
+lineitem l_orderkey=4131 l_linenumber=6: extra in target
+lineitem l_orderkey=4132 l_linenumber=1: extra in target
+lineitem l_orderkey=4132 l_linenumber=2: extra in target
+lineitem l_orderkey=4132 l_linenumber=3: extra in target
+lineitem l_orderkey=4133 l_linenumber=1: extra in target
+lineitem l_orderkey=4134 l_linenumber=1: extra in target
+lineitem l_orderkey=4134 l_linenumber=2: extra in target
+lineitem l_orderkey=4134 l_linenumber=3: extra in target
+lineitem l_orderkey=4134 l_linenumber=4: extra in target
+lineitem l_orderkey=4135 l_linenumber=1: extra in target
+lineitem l_orderkey=4135 l_linenumber=2: extra in target
+lineitem l_orderkey=4135 l_linenumber=3: extra in target
+lineitem l_orderkey=4135 l_linenumber=4: extra in target
+lineitem l_orderkey=6000001 l_linenumber=1: extra in target
+lineitem l_orderkey=6000002 l_linenumber=1: extra in target
+lineitem l_orderkey=6000003 l_linenumber=1: extra in target
+lineitem l_orderkey=6000004 l_linenumber=1: extra in target
+lineitem l_orderkey=6000005 l_linenumber=1: extra in target
+lineitem l_orderkey=6000006 l_linenumber=1: extra in target
+lineitem l_orderkey=6000007 l_linenumber=1: extra in target
+lineitem l_orderkey=6000008 l_linenumber=1: extra in target
+lineitem l_orderkey=6000009 l_linenumber=1: extra in target
+lineitem l_orderkey=6000010 l_linenumber=1: extra in target
+lineitem l_orderkey=6000011 l_linenumber=1: extra in target
+lineitem l_orderkey=6000012 l_linenumber=1: extra in target
+lineitem l_orderkey=6000013 l_linenumber=1: extra in target
+lineitem l_orderkey=6000014 l_linenumber=1: extra in target
+lineitem l_orderkey=6000015 l_linenumber=1: extra in target
+lineitem l_orderkey=6000016 l_linenumber=1: extra in target
+lineitem l_orderkey=6000017 l_linenumber=1: extra in target
+lineitem l_orderkey=6000018 l_linenumber=1: extra in target
+lineitem l_orderkey=6000019 l_linenumber=1: extra in target
+lineitem l_orderkey=6000020 l_linenumber=1: extra in target
+lineitem l_orderkey=3074 l_linenumber=1: value mismatch
+    l_extendedprice    source=78631.50                     target=78631.51
+lineitem l_orderkey=3074 l_linenumber=2: value mismatch
+    l_extendedprice    source=52544.70                     target=52544.71
+lineitem l_orderkey=3075 l_linenumber=1: value mismatch
+    l_extendedprice    source=70742.10                     target=70742.11
+lineitem l_orderkey=3075 l_linenumber=2: value mismatch
+    l_extendedprice    source=2230.32                      target=2230.33
+lineitem l_orderkey=3076 l_linenumber=1: value mismatch
+    l_extendedprice    source=62498.92                     target=62498.93
+lineitem l_orderkey=3076 l_linenumber=2: value mismatch
+    l_extendedprice    source=27967.72                     target=27967.73
+lineitem l_orderkey=3076 l_linenumber=3: value mismatch
+    l_extendedprice    source=33361.27                     target=33361.28
+lineitem l_orderkey=3077 l_linenumber=1: value mismatch
+    l_extendedprice    source=43919.50                     target=43919.51
+lineitem l_orderkey=3077 l_linenumber=2: value mismatch
+    l_extendedprice    source=44004.40                     target=44004.41
+lineitem l_orderkey=3077 l_linenumber=3: value mismatch
+    l_extendedprice    source=23371.66                     target=23371.67
+lineitem l_orderkey=3077 l_linenumber=4: value mismatch
+    l_extendedprice    source=37204.80                     target=37204.81
+lineitem l_orderkey=3078 l_linenumber=1: value mismatch
+    l_extendedprice    source=37036.25                     target=37036.26
+lineitem l_orderkey=3078 l_linenumber=2: value mismatch
+    l_extendedprice    source=23838.15                     target=23838.16
+lineitem l_orderkey=3079 l_linenumber=1: value mismatch
+    l_extendedprice    source=19900.40                     target=19900.41
+lineitem l_orderkey=3079 l_linenumber=2: value mismatch
+    l_extendedprice    source=57208.24                     target=57208.25
+lineitem l_orderkey=3079 l_linenumber=3: value mismatch
+    l_extendedprice    source=63146.40                     target=63146.41
+lineitem l_orderkey=3079 l_linenumber=4: value mismatch
+    l_extendedprice    source=2278.42                      target=2278.43
+lineitem l_orderkey=3079 l_linenumber=5: value mismatch
+    l_extendedprice    source=3207.02                      target=3207.03
+lineitem l_orderkey=3079 l_linenumber=6: value mismatch
+    l_extendedprice    source=66993.94                     target=66993.95
+lineitem l_orderkey=3104 l_linenumber=1: value mismatch
+    l_extendedprice    source=30791.60                     target=30791.61
+lineitem l_orderkey=3104 l_linenumber=2: value mismatch
+    l_shipdate         source=1993-12-25                   target=1993-12-26
+lineitem l_orderkey=3104 l_linenumber=3: value mismatch
+    l_shipdate         source=1993-10-05                   target=1993-10-06
+lineitem l_orderkey=3104 l_linenumber=4: value mismatch
+    l_shipdate         source=1994-01-02                   target=1994-01-03
+lineitem l_orderkey=3105 l_linenumber=1: value mismatch
+    l_shipdate         source=1997-02-07                   target=1997-02-08
+lineitem l_orderkey=3105 l_linenumber=2: value mismatch
+    l_shipdate         source=1996-12-25                   target=1996-12-26
+lineitem l_orderkey=3105 l_linenumber=3: value mismatch
+    l_shipdate         source=1997-02-28                   target=1997-03-01
+lineitem l_orderkey=3105 l_linenumber=4: value mismatch
+    l_shipdate         source=1997-03-08                   target=1997-03-09
+lineitem l_orderkey=3105 l_linenumber=5: value mismatch
+    l_shipdate         source=1996-12-28                   target=1996-12-29
+lineitem l_orderkey=3105 l_linenumber=6: value mismatch
+    l_shipdate         source=1997-03-03                   target=1997-03-04
+lineitem l_orderkey=3106 l_linenumber=1: value mismatch
+    l_shipdate         source=1997-02-28                   target=1997-03-01
+lineitem l_orderkey=3106 l_linenumber=2: value mismatch
+    l_shipdate         source=1997-02-27                   target=1997-02-28
+lineitem l_orderkey=3106 l_linenumber=3: value mismatch
+    l_shipdate         source=1997-04-05                   target=1997-04-06
+lineitem l_orderkey=3106 l_linenumber=4: value mismatch
+    l_shipdate         source=1997-02-02                   target=1997-02-03
+lineitem l_orderkey=3106 l_linenumber=5: value mismatch
+    l_shipdate         source=1997-02-25                   target=1997-02-26
+lineitem l_orderkey=4096 l_linenumber=2: value mismatch
+    l_shipdate         source=1992-09-30                   target=1992-10-01
+lineitem l_orderkey=4096 l_linenumber=3: value mismatch
+    l_shipdate         source=1992-08-24                   target=1992-08-25
+lineitem l_orderkey=4096 l_linenumber=4: value mismatch
+    l_shipdate         source=1992-08-24                   target=1992-08-25
+lineitem l_orderkey=4097 l_linenumber=1: value mismatch
+    l_shipdate         source=1996-08-31                   target=1996-09-01
+lineitem l_orderkey=4097 l_linenumber=2: value mismatch
+    l_shipdate         source=1996-07-29                   target=1996-07-30
+lineitem l_orderkey=4097 l_linenumber=3: value mismatch
+    l_shipdate         source=1996-08-11                   target=1996-08-12
+lineitem l_orderkey=4098 l_linenumber=1: value mismatch
+    l_comment          source=e slyly blithely silent deposits. fluff target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=1: value mismatch
+    l_comment          source= slowly final warthogs sleep blithely. q target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=2: value mismatch
+    l_comment          source=. special packages sleep     target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=3: value mismatch
+    l_comment          source=beans cajole slyly quickly ironic  target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=4: value mismatch
+    l_comment          source=onic foxes. quickly final fox target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=5: value mismatch
+    l_comment          source=ts haggle according to the slyly f target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=6: value mismatch
+    l_comment          source=fluffy accounts impress pending, iro target=corrupted comment
+lineitem l_orderkey=4099 l_linenumber=7: value mismatch
+    l_comment          source=ages nag requests.           target=corrupted comment
+lineitem l_orderkey=4100 l_linenumber=1: value mismatch
+    l_comment          source=lyly regular, bold requ      target=corrupted comment
+lineitem l_orderkey=4101 l_linenumber=1: value mismatch
+    l_comment          source=ly express instructions. careful target=corrupted comment
+lineitem l_orderkey=4102 l_linenumber=1: value mismatch
+    l_comment          source=ly silent theodolites sleep unusual exc target=corrupted comment
+lineitem l_orderkey=4102 l_linenumber=2: value mismatch
+    l_comment          source= the furiously even          target=corrupted comment
+lineitem l_orderkey=4102 l_linenumber=3: value mismatch
+    l_comment          source=ffix blithely slyly special  target=corrupted comment
+lineitem l_orderkey=4102 l_linenumber=4: value mismatch
+    l_comment          source=y among the furiously special target=corrupted comment
+lineitem l_orderkey=4102 l_linenumber=5: value mismatch
+    l_comment          source= the even requests; regular pinto target=corrupted comment
+lineitem l_orderkey=4102 l_linenumber=6: value mismatch
+    l_comment          source=bove the carefully pending the target=corrupted comment
+lineitem l_orderkey=4103 l_linenumber=1: value mismatch
+    l_comment          source=usly across the slyly busy accounts! fin target=corrupted comment
+lineitem l_orderkey=4128 l_linenumber=1: value mismatch
+    l_comment          source=ake permanently              target=corrupted comment
+lineitem l_orderkey=4129 l_linenumber=1: value mismatch
+    l_comment          source=ckages haggl                 target=corrupted comment
+lineitem l_orderkey=4129 l_linenumber=2: value mismatch
+    l_comment          source=y regular foxes. slyly ironic deposits  target=corrupted comment

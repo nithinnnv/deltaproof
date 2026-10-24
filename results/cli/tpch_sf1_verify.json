@@ -1,0 +1,626 @@
+{
+  "differences": 120,
+  "estimate": 198,
+  "level": 1,
+  "failed_partitions": 0,
+  "cost": {
+    "bytes": 260496,
+    "round_trips": 2,
+    "rows_rescanned": 0
+  },
+  "missing_in_target": {
+    "count": 20,
+    "keys": [
+      {
+        "table": "lineitem",
+        "l_orderkey": 3044,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3045,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3045,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3046,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3046,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3046,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3047,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3047,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3072,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3072,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3072,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3072,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3072,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3073,
+        "l_linenumber": 7
+      }
+    ]
+  },
+  "extra_in_target": {
+    "count": 40,
+    "keys": [
+      {
+        "table": "lineitem",
+        "l_orderkey": 4130,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4130,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4131,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4131,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4131,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4131,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4131,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4131,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4132,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4132,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4132,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4133,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4134,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4134,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4134,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4134,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4135,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4135,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4135,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4135,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000001,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000002,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000003,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000004,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000005,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000006,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000007,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000008,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000009,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000010,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000011,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000012,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000013,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000014,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000015,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000016,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000017,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000018,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000019,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 6000020,
+        "l_linenumber": 1
+      }
+    ]
+  },
+  "value_mismatch": {
+    "count": 60,
+    "keys": [
+      {
+        "table": "lineitem",
+        "l_orderkey": 3074,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3074,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3075,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3075,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3076,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3076,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3076,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3077,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3077,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3077,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3077,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3078,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3078,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3079,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3079,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3079,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3079,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3079,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3079,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3104,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3104,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3104,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3104,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3105,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3105,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3105,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3105,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3105,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3105,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3106,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3106,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3106,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3106,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 3106,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4096,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4096,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4096,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4097,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4097,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4097,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4098,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4099,
+        "l_linenumber": 7
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4100,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4101,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4102,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4102,
+        "l_linenumber": 2
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4102,
+        "l_linenumber": 3
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4102,
+        "l_linenumber": 4
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4102,
+        "l_linenumber": 5
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4102,
+        "l_linenumber": 6
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4103,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4128,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4129,
+        "l_linenumber": 1
+      },
+      {
+        "table": "lineitem",
+        "l_orderkey": 4129,
+        "l_linenumber": 2
+      }
+    ]
+  }
+}

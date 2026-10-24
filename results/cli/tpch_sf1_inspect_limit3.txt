@@ -1,0 +1,12 @@
+lineitem l_orderkey=3044 l_linenumber=3: missing in target
+lineitem l_orderkey=3045 l_linenumber=1: missing in target
+lineitem l_orderkey=3045 l_linenumber=2: missing in target
+lineitem l_orderkey=4130 l_linenumber=1: extra in target
+lineitem l_orderkey=4130 l_linenumber=2: extra in target
+lineitem l_orderkey=4131 l_linenumber=1: extra in target
+lineitem l_orderkey=3074 l_linenumber=1: value mismatch
+    l_extendedprice    source=78631.50                     target=78631.51
+lineitem l_orderkey=3074 l_linenumber=2: value mismatch
+    l_extendedprice    source=52544.70                     target=52544.71
+lineitem l_orderkey=3075 l_linenumber=1: value mismatch
+    l_extendedprice    source=70742.10                     target=70742.11
