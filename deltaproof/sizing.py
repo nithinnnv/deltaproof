@@ -105,11 +105,13 @@ def _next_index(last: int, prng: int) -> tuple[int, int]:
 
 def _encode(t: Table, n_symbols: int) -> tuple[np.ndarray, ...]:
     """First n_symbols coded symbols of a set, vectorized over elements."""
-    count = np.zeros(n_symbols, np.int64)
-    khi = np.zeros(n_symbols, np.uint64)
-    klo = np.zeros(n_symbols, np.uint64)
-    dig = np.zeros(n_symbols, np.uint64)
-    chk = np.zeros(n_symbols, np.uint64)
+    arrays = (np.zeros(n_symbols, np.int64), *(np.zeros(n_symbols, np.uint64) for _ in range(4)))
+    _accumulate(t, n_symbols, *arrays)
+    return arrays
+
+
+def _accumulate(t: Table, n_symbols: int, count, khi, klo, dig, chk, sign: int = 1) -> None:
+    """Add (sign=+1) or remove (sign=-1) a set's elements in the first n_symbols symbols, in place."""
     eh = element_hash(t.khi, t.klo, t.dig)
     ch = check_hash(eh)
     last = np.zeros(len(t), np.float64)  # exact for indices < 2^53
@@ -118,7 +120,7 @@ def _encode(t: Table, n_symbols: int) -> tuple[np.ndarray, ...]:
     while live.any():
         idx = np.flatnonzero(live)
         pos = last[idx].astype(np.int64)
-        np.add.at(count, pos, 1)
+        np.add.at(count, pos, sign)
         np.bitwise_xor.at(khi, pos, t.khi[idx])
         np.bitwise_xor.at(klo, pos, t.klo[idx])
         np.bitwise_xor.at(dig, pos, t.dig[idx])
@@ -128,7 +130,45 @@ def _encode(t: Table, n_symbols: int) -> tuple[np.ndarray, ...]:
         step = np.ceil((last[idx] + 1.5) * (_TWO32 / np.sqrt(prng[idx].astype(np.float64) + 1) - 1))
         last[idx] += np.maximum(step, 1.0)
         live[idx] = last[idx] < n_symbols
-    return count, khi, klo, dig, chk
+
+
+class RatelessSketch:
+    """The first n_symbols coded symbols of a set, kept current under inserts and deletes.
+
+    Rateless symbols are linear like IBLT cells, so a change stream maintains them: an element
+    touches about 2 ln(n_symbols) symbols. Comparing two such sketches streams the difference of
+    their symbols until it decodes, so the bytes sent follow the difference, not n_symbols.
+    """
+
+    def __init__(self, n_symbols: int = 1 << 18):
+        self.n = n_symbols
+        self.count = np.zeros(n_symbols, np.int64)
+        self.khi = np.zeros(n_symbols, np.uint64)
+        self.klo = np.zeros(n_symbols, np.uint64)
+        self.dig = np.zeros(n_symbols, np.uint64)
+        self.chk = np.zeros(n_symbols, np.uint64)
+
+    def update(self, khi, klo, dig, sign: int = 1) -> None:
+        t = Table(np.asarray(khi, np.uint64), np.asarray(klo, np.uint64), np.asarray(dig, np.uint64),
+                  np.zeros(len(np.atleast_1d(klo)), np.int64))
+        if len(t) == 0:
+            return
+        _accumulate(t, self.n, *self.arrays, sign=sign)
+
+    @property
+    def arrays(self):
+        return self.count, self.khi, self.klo, self.dig, self.chk
+
+    def compare(self, other: RatelessSketch) -> SizingResult:
+        """Stream this sketch's symbols against other's; exact difference, or RuntimeError if n is too small."""
+        t0 = time.perf_counter()
+        out = _stream_decode(self.arrays, other.arrays)
+        if out is None:
+            raise RuntimeError(f"difference larger than {self.n} rateless symbols can decode")
+        used, only_a, only_b = out
+        keys = set().union(*classify(only_a, only_b))
+        return SizingResult("riblt", keys, 2 * used * CELL_BYTES, 1, used, 0.0, time.perf_counter() - t0,
+                            detail={"symbols": used, "only_a": only_a, "only_b": only_b})
 
 
 def _indices_from(eh: int, start: int, stop: int):

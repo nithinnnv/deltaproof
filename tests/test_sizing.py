@@ -44,3 +44,20 @@ def test_wu_and_riblt_recover_exactly_the_injected_keys():
         for fn in (sizing.wu_two_round, sizing.riblt):
             r = fn(inj.source, inj.target)
             assert r.keys == inj.all_keys, (fn.__name__, d)
+
+
+def test_rateless_sketch_follows_inserts_and_deletes_and_compares_exactly():
+    inj = injected(20_000, 300)
+    s, t = inj.source, inj.target
+    a = sizing.RatelessSketch(1 << 14)
+    half = len(s) // 2
+    a.update(s.khi[:half], s.klo[:half], s.dig[:half], +1)  # built in two batches...
+    a.update(t.khi, t.klo, t.dig, +1)                        # ...with an unrelated batch added
+    a.update(s.khi[half:], s.klo[half:], s.dig[half:], +1)
+    a.update(t.khi, t.klo, t.dig, -1)                        # ...and removed again
+    direct = sizing._encode(s, 1 << 14)
+    assert all(np.array_equal(x, y) for x, y in zip(a.arrays, direct))
+    b = sizing.RatelessSketch(1 << 14)
+    b.update(t.khi, t.klo, t.dig, +1)
+    r = a.compare(b)
+    assert r.keys == inj.all_keys and r.cells < 1 << 14

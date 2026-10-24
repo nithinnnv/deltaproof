@@ -430,9 +430,9 @@ class Live:
                         new_d.append(d)
                 u = lambda x: np.array(x, dtype=np.uint64)
                 if old_k:
-                    self.tgt.update(u([k[0] for k in old_k]), u([k[1] for k in old_k]), u(old_d), -1)
+                    self.tgt_update(u([k[0] for k in old_k]), u([k[1] for k in old_k]), u(old_d), -1)
                 if new_k:
-                    self.tgt.update(u([k[0] for k in new_k]), u([k[1] for k in new_k]), u(new_d), +1)
+                    self.tgt_update(u([k[0] for k in new_k]), u([k[1] for k in new_k]), u(new_d), +1)
                 for key, st, lsn in status:
                     self.last_status[key] = (st, lsn)
                 self.w_t = max(self.w_t, self.next_w)
@@ -463,7 +463,18 @@ class Live:
             for s in (-1, 1):
                 m = sign == s
                 if m.any():
-                    self.src.update(arr[m, 0], arr[m, 1], arr[m, 2], s)
+                    self.src_update(arr[m, 0], arr[m, 1], arr[m, 2], s)
+
+    # Every sketch change goes through these, so subclasses can maintain more than one sketch.
+    def src_update(self, khi, klo, dig, sign: int) -> None:
+        self.src.update(khi, klo, dig, sign)
+
+    def tgt_update(self, khi, klo, dig, sign: int) -> None:
+        self.tgt.update(khi, klo, dig, sign)
+
+    def compare_extra(self, candidates: set) -> dict:
+        """Hook: compare any other sketches while verify_now holds the lock. Returns fields for the record."""
+        return {}
 
     def valid_states(self, key: Key) -> list:
         with self.slock:
@@ -504,6 +515,7 @@ class Live:
             rep = verify(self.src, self.tgt, self.full_rescan(pg, target))
             t_sketch = time.perf_counter() - t0
             cands = sorted(rep.keys)
+            extra = self.compare_extra(set(cands))  # other sketches, at the same instant
             reported = self.confirm_many(target, cands) if cands else []
             status = dict(self.last_status)
         truth_now = {k for k, (st, lsn) in status.items() if st in FAULTY and lsn <= w}
@@ -516,7 +528,7 @@ class Live:
                "reported": len(reported), "reported_false": len(false_rep),
                "faulty_at_or_below_w": len(truth_now), "missed": len(truth_now - rep_set),
                "target_point_reads": len(cands), "sketch_ms": round(t_sketch * 1000, 1),
-               "total_ms": round((time.perf_counter() - t0) * 1000, 1)}
+               "total_ms": round((time.perf_counter() - t0) * 1000, 1), **extra}
         self.verifications.append(rec)
         for k in false_rep:
             self.reports.append({"t": rec["t"], "key": k, "status": status.get(k)})

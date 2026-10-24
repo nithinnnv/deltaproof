@@ -24,9 +24,16 @@ def _connect(url: str):
     global _conn
     u = urlparse(url)
     if u.scheme == "cassandra":
-        from cassandra.cluster import Cluster
+        from urllib.parse import parse_qs
 
-        cluster = Cluster([u.hostname or "127.0.0.1"], port=u.port or 9042)
+        from cassandra import ConsistencyLevel
+        from cassandra.cluster import EXEC_PROFILE_DEFAULT, Cluster, ExecutionProfile
+
+        # ?consistency=QUORUM for replicated keyspaces, so reads see every acknowledged write
+        level = parse_qs(u.query).get("consistency", ["ONE"])[0].upper()
+        profile = ExecutionProfile(consistency_level=getattr(ConsistencyLevel, level), request_timeout=600)
+        cluster = Cluster([u.hostname or "127.0.0.1"], port=u.port or 9042,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: profile})
         _conn = ("cassandra", cluster.connect(), u.path.strip("/"))
     else:
         import psycopg
