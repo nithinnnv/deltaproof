@@ -19,6 +19,7 @@ maintained on each side and compared at every check.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import subprocess
 import sys
@@ -274,9 +275,13 @@ class ClusterLive(Live):
         c.close()
         self.poll_done.set()
 
-    def compare_extra(self, candidates: set) -> dict:
+    def snapshot_extra(self):
+        return copy.deepcopy(self.src_r), copy.deepcopy(self.tgt_r)  # same frozen instant as the ladder
+
+    def compare_extra(self, state, candidates: set) -> dict:
         t0 = time.perf_counter()
-        r = self.src_r.compare(self.tgt_r)  # called under the same lock as the ladder comparison
+        src_r, tgt_r = state
+        r = src_r.compare(tgt_r)
         return {"riblt_bytes": r.bytes, "riblt_symbols": r.cells,
                 "riblt_decode_ms": round((time.perf_counter() - t0) * 1000, 1),
                 "riblt_candidates_equal_ladder": r.keys == candidates}
@@ -444,6 +449,9 @@ def run_live(args) -> None:
         "live_reported_false_total": sum(v["reported_false"] for v in lv),
         "live_missed_total": sum(v["missed"] for v in lv),
         "live_check_ms_median": float(np.median([v["total_ms"] for v in lv])) if lv else None,
+        "live_replicator_paused_ms_median": float(np.median([v["replicator_paused_ms"] for v in lv])) if lv else None,
+        "live_target_point_reads_total": sum(v["target_point_reads"] for v in lv),
+        "live_cached_verdicts_total": sum(v["cached_verdicts"] for v in lv),
         "live_ladder_bytes_median": float(np.median([v["bytes"] for v in lv])) if lv else None,
         "live_riblt_bytes_median": float(np.median([v["riblt_bytes"] for v in lv])) if lv else None,
         "live_riblt_agrees_with_ladder": all(v["riblt_candidates_equal_ladder"] for v in live.verifications),

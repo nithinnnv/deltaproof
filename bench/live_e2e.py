@@ -24,6 +24,7 @@ exact difference of full scans of both stores.
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
 import json
 import os
@@ -244,6 +245,8 @@ class Live:
         self.src_later: dict[Key, list] = {}
         # What the replicator did to each key's last processed change: (status, lsn). Ground truth.
         self.last_status: dict[Key, tuple[str, int]] = {}
+        self.faulty: dict[Key, tuple[str, int]] = {}  # keys whose last processed change was faulty
+        self.reported_cache: dict[Key, int] = {}  # key -> version of its last processed change when reported
         self.queue: deque = deque()
         self.deferred: list = []  # (release_time, lsn, item)
         self.blocked: dict[Key, float] = {}  # key -> release time of its latest deferred change
@@ -435,6 +438,10 @@ class Live:
                     self.tgt_update(u([k[0] for k in new_k]), u([k[1] for k in new_k]), u(new_d), +1)
                 for key, st, lsn in status:
                     self.last_status[key] = (st, lsn)
+                    if st in FAULTY:  # small map of currently faulty keys, cheap to copy at checks
+                        self.faulty[key] = (st, lsn)
+                    else:
+                        self.faulty.pop(key, None)
                 self.w_t = max(self.w_t, self.next_w)
             self.stats.target_sketch_s += time.perf_counter() - t1
             self.stats.apply_cpu_s += time.thread_time() - t0
@@ -472,8 +479,12 @@ class Live:
     def tgt_update(self, khi, klo, dig, sign: int) -> None:
         self.tgt.update(khi, klo, dig, sign)
 
-    def compare_extra(self, candidates: set) -> dict:
-        """Hook: compare any other sketches while verify_now holds the lock. Returns fields for the record."""
+    def snapshot_extra(self):
+        """Hook: copy any other sketches while verify_now holds the lock."""
+        return None
+
+    def compare_extra(self, state, candidates: set) -> dict:
+        """Hook: compare the copies from snapshot_extra (unlocked). Returns fields for the record."""
         return {}
 
     def valid_states(self, key: Key) -> list:
@@ -508,26 +519,48 @@ class Live:
         return reported
 
     def verify_now(self, pg, target: Target, label: str) -> dict:
+        """Two short pauses of the replicator instead of one long one.
+
+        Phase 1 freezes the state at w_T by copying the sketches; they are decoded unlocked.
+        Phase 2 confirms candidates against the target. A key reported at an earlier check whose
+        last processed change has not changed since keeps its target row, and every source state it
+        could still match has a newer version, so its verdict is reused without a read. Reading the
+        target after w_T is sound because valid states include every delivered change after w_T; a
+        fault repaired by a later change before the read is no longer a divergence and is not
+        counted as missed."""
         t0 = time.perf_counter()
-        with self.tlock:  # the replicator is paused between batches while we read
+        with self.tlock:  # phase 1: freeze the state at the watermark (copies only)
             w = self.w_t
             self.advance_source(w)
-            rep = verify(self.src, self.tgt, self.full_rescan(pg, target))
-            t_sketch = time.perf_counter() - t0
-            cands = sorted(rep.keys)
-            extra = self.compare_extra(set(cands))  # other sketches, at the same instant
-            reported = self.confirm_many(target, cands) if cands else []
-            status = dict(self.last_status)
-        truth_now = {k for k, (st, lsn) in status.items() if st in FAULTY and lsn <= w}
+            src, tgt = copy.deepcopy(self.src), copy.deepcopy(self.tgt)
+            extra_state = self.snapshot_extra()
+        lock_ms = (time.perf_counter() - t0) * 1000
+        rep = verify(src, tgt, self.full_rescan(pg, target))
+        t_sketch = time.perf_counter() - t0
+        cands = sorted(rep.keys)
+        extra = self.compare_extra(extra_state, set(cands))  # other sketches, same frozen instant
+        t1 = time.perf_counter()
+        with self.tlock:  # phase 2: confirm, re-reading only keys that may have changed
+            version = lambda k: self.last_status[k][1] if k in self.last_status else None
+            cached = [k for k in cands if k in self.reported_cache and self.reported_cache[k] == version(k)]
+            cached_set = set(cached)
+            fresh = [k for k in cands if k not in cached_set]
+            reported = cached + (self.confirm_many(target, fresh) if fresh else [])
+            self.reported_cache = {k: version(k) for k in reported}
+            faulty = dict(self.faulty)
+            status = {k: self.last_status.get(k) for k in reported}
+        lock_ms += (time.perf_counter() - t1) * 1000
+        truth_now = {k for k, (st, lsn) in faulty.items() if lsn <= w}
         rep_set = set(reported)
-        false_rep = [k for k in reported if status.get(k, ("ok", 0))[0] not in FAULTY]
+        false_rep = [k for k in reported if (status.get(k) or ("ok", 0))[0] not in FAULTY]
         rec = {"label": label, "t": round(time.monotonic() - self.t_start, 1), "watermark": w,
                "estimate": rep.estimate, "level": rep.level, "bytes": rep.cost.bytes,
                "round_trips": rep.cost.round_trips, "rows_rescanned": rep.cost.rows_scanned,
                "failed_partitions": rep.failed_partitions, "candidates": len(cands),
                "reported": len(reported), "reported_false": len(false_rep),
                "faulty_at_or_below_w": len(truth_now), "missed": len(truth_now - rep_set),
-               "target_point_reads": len(cands), "sketch_ms": round(t_sketch * 1000, 1),
+               "target_point_reads": len(fresh), "cached_verdicts": len(cached),
+               "sketch_ms": round(t_sketch * 1000, 1), "replicator_paused_ms": round(lock_ms, 1),
                "total_ms": round((time.perf_counter() - t0) * 1000, 1), **extra}
         self.verifications.append(rec)
         for k in false_rep:
