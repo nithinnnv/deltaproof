@@ -12,6 +12,7 @@
 
 \newcommand{\sys}{\textsc{DeltaProof}}
 \newcommand{\repo}{\url{https://github.com/nithinnnv/deltaproof}}
+\newcommand{\video}{\url{https://www.youtube.com/watch?v=jJpkxPjW1ME}}
 \lstset{basicstyle=\ttfamily\scriptsize, columns=fullflexible, keepspaces=true, frame=single, framesep=2pt,
   xleftmargin=3pt, xrightmargin=3pt, aboveskip=4pt, belowskip=2pt, breaklines=true}
 
@@ -29,7 +30,7 @@ nithin.nnv@gmail.com}
 \maketitle
 
 \begin{abstract}
-When a system is re-engineered onto a different database, for example from PostgreSQL to Cassandra, its owners must show that the migrated data matches the original before they cut over. Existing tools compare row counts and aggregates, which miss value errors, or compare every row, which fails when the two stores order and encode records differently. \sys{} is an open-source command-line tool and Python library that reports the exact keys that are missing, extra or different between two databases, and then shows which columns differ for each. A canonical encoder makes logically equal records hash identically across stores; each store is summarized by a sketch built from invertible Bloom lookup tables, whose comparison costs bytes proportional to the number of differences rather than the size of the tables; and parallel, snapshot-consistent scans build the sketches. On TPC-H \texttt{lineitem} loaded into PostgreSQL and Cassandra at up to 60 million rows, \sys{} found every injected fault with no false positives while exchanging 260\,KB, where a checksum of the drivers' raw values flagged every row. Tool: \repo{}.
+When a system is re-engineered onto a different database, for example from PostgreSQL to Cassandra, its owners must show that the migrated data matches the original before they cut over. Existing tools compare row counts and aggregates, which miss value errors, or compare every row, which fails when the two stores order and encode records differently. \sys{} is an open-source command-line tool and Python library that reports the exact keys that are missing, extra or different between two databases, and then shows which columns differ for each. A canonical encoder makes logically equal records hash identically across stores; each store is summarized by a sketch built from invertible Bloom lookup tables, whose comparison costs bytes proportional to the number of differences rather than the size of the tables; and parallel, snapshot-consistent scans build the sketches. On TPC-H \texttt{lineitem} loaded into PostgreSQL and Cassandra at up to 60 million rows, \sys{} found every injected fault with no false positives while exchanging 260\,KB, where a checksum of the drivers' raw values flagged every row. Tool: \repo{}. Video: \video{}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -238,7 +239,7 @@ Factor & 1/16 & 1/4 & 1 & 4 & 16\\
 \sys{} verifies a quiesced snapshot; a store being written during the scan yields a difference that includes the writes in flight. Because IBLTs are linear, the library also accepts inserts, updates and deletes to keep sketches current from a change stream, but this paper does not evaluate that mode. Tables without a primary key cannot be compared key by key. The table specification must match the migration's intended mapping; if both sides were encoded wrongly in the same way, a mismatch would be hidden, so specifications need their own tests. Adapters exist for PostgreSQL and Cassandra only. A run with no differences still exchanges the 187\,KB estimator.
 
 \section{Conclusion and Availability}
-\sys{} turns migration verification into a short specification and two commands: one returns the exact differing keys from stores that encode and order data differently, and the other shows what differs in each. The tool, tests, benchmark scripts, Docker setup and all result files are available under the Apache~2.0 license at \repo{}.
+\sys{} turns migration verification into a short specification and two commands: one returns the exact differing keys from stores that encode and order data differently, and the other shows what differs in each. The tool, tests, benchmark scripts, Docker setup and all result files are available under the Apache~2.0 license at \repo{}, and a demonstration video (under 4 minutes) is at \video{}.
 
 \section*{Acknowledgment}
 The authors used Claude (Anthropic) to write the tool's implementation, tests and benchmark scripts and to draft and edit the text of all sections of this paper, including the figure and tables. All results come from running that code. The authors reviewed and take responsibility for all content.
