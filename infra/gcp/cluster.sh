@@ -33,7 +33,9 @@ vms() {
 }
 
 up() {
-  spot=""
+  # Regular VMs delete themselves after MAX_RUN (default 8h) even if nobody runs `down`; Google does
+  # not allow adding this to a running VM. Spot VMs stop instead when reclaimed, so batch jobs resume.
+  spot="--max-run-duration=${MAX_RUN:-8h} --instance-termination-action=DELETE"
   [ "$SPOT" = 1 ] && spot="--provisioning-model=SPOT --instance-termination-action=STOP"
   for spec in $(vms); do
     name=${spec%%:*}; rest=${spec#*:}; type=${rest%%:*}; disk=${rest#*:}
