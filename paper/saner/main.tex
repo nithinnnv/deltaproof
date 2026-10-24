@@ -21,7 +21,10 @@
 
 \author{\IEEEauthorblockN{Nithin Narla}
 \IEEEauthorblockA{Independent Researcher\\
-nithin.nnv@gmail.com}}
+nithin.nnv@gmail.com}
+\and
+\IEEEauthorblockN{Suhas Jangoan}
+\IEEEauthorblockA{suhas.jangoan@ieee.org}}
 
 \maketitle
 
@@ -83,10 +86,22 @@ rescanned 0 rows
 \end{lstlisting}
 
 \subsection{Diagnosing and fixing them}
-With \texttt{--json}, the report is one object: \texttt{differences}, the estimate and sketch level used, a \texttt{cost} object (bytes, round trips, rows rescanned), and for each class (\texttt{missing\_in\_target}, \texttt{extra\_in\_target}, \texttt{value\_mismatch}) a \texttt{count} and a list of keys, each with its table and key columns. \texttt{deltaproof inspect} takes that report, reads each key from both stores and prints the columns whose canonical values differ (Listing~\ref{lst:inspect}); differences that are only formatting, such as padding or decimal scale, are not shown, because they are not differences. Its \texttt{--json} output lists, per key, the class, whether each store has the row, and each differing column with both values.
+With \texttt{--json}, the report is one object: \texttt{differences}, the estimate and sketch level used, a \texttt{cost} object (bytes, round trips, rows rescanned), and for each class (\texttt{missing\_in\_target}, \texttt{extra\_in\_target}, \texttt{value\_mismatch}) a \texttt{count} and a list of keys, each with its table and key columns. \texttt{deltaproof inspect} takes that report, reads each key from both stores and prints the columns whose canonical values differ (Listing~\ref{lst:inspect}); differences that are only formatting, such as padding or decimal scale, are not shown, because they are not differences. Its \texttt{--json} output lists, per key, the class, whether each store has the row, and each differing column with both values. On the SF~1 run of Section~\ref{sec:eval}, \texttt{inspect} named exactly one column for each of the 60 value mismatches: \texttt{l\_extendedprice}, \texttt{l\_shipdate} and \texttt{l\_comment}, 20 each, the three injected value faults.
 
-\begin{lstlisting}[caption={Diagnosing reported keys}, label={lst:inspect}]
-INSPECT-PLACEHOLDER
+\begin{lstlisting}[caption={Diagnosing reported keys at SF~1 (excerpt)}, label={lst:inspect}]
+$ deltaproof verify ... --json --limit -1 > report.json
+$ deltaproof inspect --spec lineitem.toml \
+    --source ... --target ... report.json --limit -1
+lineitem l_orderkey=3044 l_linenumber=3: missing in target
+lineitem l_orderkey=4130 l_linenumber=1: extra in target
+lineitem l_orderkey=3074 l_linenumber=1: value mismatch
+    l_extendedprice  source=78631.50  target=78631.51
+lineitem l_orderkey=3104 l_linenumber=2: value mismatch
+    l_shipdate       source=1993-12-25  target=1993-12-26
+lineitem l_orderkey=4098 l_linenumber=1: value mismatch
+    l_comment        source=e slyly blithely silent
+                       deposits. fluff
+                     target=corrupted comment
 \end{lstlisting}
 
 A typical repair loop exports the reported keys, re-copies those rows with the migration's own backfill or deletes the extra ones, and runs \texttt{verify} again. For automation, the exit status is 0 when the stores match, 1 when they differ and 2 when verification could not complete (for example, an unreachable store), so a cutover script can run \texttt{deltaproof verify} as a gate and attach the JSON report to the change record.
@@ -164,7 +179,7 @@ Raw-value digest flags & 99.9\% & 100\% & 100\%\\
 \end{tabular}
 \end{table}
 
-\emph{What does a comparison cost?} Comparing sketches took 12\,ms for the ledger and 0.16\,s for six million rows. The cost follows the number of differences (Fig.~\ref{fig:bytes}): in an in-process experiment with $10^7$ ledger rows and about 1{,}100 differences, \sys{} exchanged 0.78\,MB, while a Merkle tree exchanged 32\,MB, range-checksum bisection 280\,MB and a full comparison 480\,MB, each reporting the same keys.
+\emph{What does a comparison cost?} Comparing sketches took 12\,ms for the ledger and 0.13\,s for six million rows. The cost follows the number of differences (Fig.~\ref{fig:bytes}): in an in-process experiment with $10^7$ ledger rows and about 1{,}100 differences, \sys{} exchanged 0.78\,MB, while a Merkle tree exchanged 32\,MB, range-checksum bisection 280\,MB and a full comparison 480\,MB, each reporting the same keys.
 
 \begin{figure}[t]
 \centering
@@ -183,18 +198,18 @@ Raw-value digest flags & 99.9\% & 100\% & 100\%\\
 \label{fig:bytes}
 \end{figure}
 
-\emph{How does scanning scale?} Building a sketch needs one scan of each store; profiling the single-cursor scan at SF~0.1 showed that Python encoding, not fetching, took most of the time (15\,s of 18\,s on PostgreSQL). Parallel slices spread both. Table~\ref{tab:scan} shows scan and encode time by worker count; every configuration produced exactly the same elements as the single cursor. SCAN-SF1-SENTENCE Scan time is linear in rows per worker, so larger tables need more workers or machines; because IBLTs are linear, sketches of slices can also be built where the slices are read and summed, which would keep the coordinator's memory independent of table size (our implementation ships elements, 24 bytes per row). Computing digests inside the database would remove the transfer, but needs the canonical encoding as a user-defined function in every store.
+\emph{How does scanning scale?} Building a sketch needs one scan of each store; profiling the single-cursor scan at SF~0.1 showed that Python encoding, not fetching, took most of the time (15\,s of 18\,s on PostgreSQL). Each reader already streams: PostgreSQL rows arrive through server-side cursors in batches of 10{,}000 and Cassandra rows in pages of 5{,}000, so a worker's memory does not grow with the table. Parallel slices spread fetching and encoding. Table~\ref{tab:scan} shows scan and encode time at SF~1 (6 million rows) by worker count; every configuration produced exactly the same elements as the single cursor. Eight workers cut PostgreSQL from 176\,s to 27\,s and Cassandra from 293\,s to 38\,s ($6.6\times$ and $7.8\times$). Our largest test is 6 million rows on one laptop; for hundreds of millions of rows, scan time is linear in rows per worker, so larger tables need more workers or machines; because IBLTs are linear, sketches of slices can also be built where the slices are read and summed, which would keep the coordinator's memory independent of table size (our implementation ships elements, 24 bytes per row). Computing digests inside the database would remove the transfer, but needs the canonical encoding as a user-defined function in every store.
 
 \begin{table}[t]
-\caption{Scan and encode time (s), \texttt{lineitem} SF 0.1, by workers}
+\caption{Scan and encode time (s), \texttt{lineitem} SF 1, by workers}
 \label{tab:scan}
 \centering\footnotesize
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 Workers & 1 & 2 & 4 & 8\\
 \midrule
-PostgreSQL & 17.5 & 9.2 & 5.1 & 3.0\\
-Cassandra & 27.1 & 13.5 & 7.2 & 4.1\\
+PostgreSQL & 176.4 & 92.8 & 49.1 & 26.6\\
+Cassandra & 292.5 & 138.6 & 87.4 & 37.6\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -226,7 +241,7 @@ Factor & 1/16 & 1 & 4 & 16\\
 \sys{} turns migration verification into a short specification and two commands: one returns the exact differing keys from stores that encode and order data differently, and the other shows what differs in each. The tool, tests, benchmark scripts, Docker setup and all result files are available under the Apache~2.0 license at \repo{}.
 
 \section*{Acknowledgment}
-The author used Claude (Anthropic) to write the tool's implementation, tests and benchmark scripts and to draft and edit the text of all sections of this paper, including the figure and tables. All results come from running that code. The author reviewed and takes responsibility for all content.
+The authors used Claude (Anthropic) to write the tool's implementation, tests and benchmark scripts and to draft and edit the text of all sections of this paper, including the figure and tables. All results come from running that code. The authors reviewed and take responsibility for all content.
 
 \begin{thebibliography}{9}
 \bibitem{datadiff} data-diff, ``Technical explanation,'' project documentation. [Online]. Available: \url{https://data-diff.readthedocs.io/en/latest/technical-explanation.html}

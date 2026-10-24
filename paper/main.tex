@@ -26,7 +26,10 @@
 
 \author{\IEEEauthorblockN{Nithin Narla}
 \IEEEauthorblockA{Independent Researcher\\
-nithin.nnv@gmail.com}}
+nithin.nnv@gmail.com}
+\and
+\IEEEauthorblockN{Suhas Jangoan}
+\IEEEauthorblockA{suhas.jangoan@ieee.org}}
 
 \maketitle
 
@@ -316,7 +319,7 @@ At $n=10^7$ the sketches took 173\,MB per store (17.3 bytes per row across six l
 We loaded 200{,}000 entries into PostgreSQL and Cassandra and injected 120 faults of six classes with SQL and CQL statements. Scanning took 0.47\,s on PostgreSQL and 3.6\,s on Cassandra; canonical encoding took 4.3\,s and verification 12\,ms. \sys{} found all 120 faults with no false positives in two round trips and 260\,KB. A digest of the drivers' raw values flagged 199{,}835 rows, 199{,}715 of them falsely, because the stores format and round timestamps differently.
 
 \subsection{TPC-H data}
-To test the encoding on a standard schema we did not design, we generated TPC-H \texttt{lineitem} at scale factor 1 (6{,}001{,}215 rows) with \texttt{dbgen} through DuckDB, loaded it into PostgreSQL and Cassandra, and injected 120 faults of six classes (lost writes, precision, date shifts, corruption, lost deletes, phantoms). These are not TPC-H benchmark results. The exact difference of full scans of both stores equalled the injected set, and \sys{} found all 120 keys with no false positives in two round trips and 260\,KB; verification took 0.16\,s and building both sketches 12\,s. A digest of the drivers' raw values flagged every row, because PostgreSQL returns \texttt{CHAR($n$)} values padded and Cassandra's driver returns its own date type. Loading Cassandra took 822\,s and scanning with row-by-row canonical encoding took 243\,s on PostgreSQL and 495\,s on Cassandra in Python; a sketch fed by a change stream avoids these scans.
+To test the encoding on a standard schema we did not design, we generated TPC-H \texttt{lineitem} at scale factor 1 (6{,}001{,}215 rows) with \texttt{dbgen} through DuckDB, loaded it into PostgreSQL and Cassandra, and injected 120 faults of six classes (lost writes, precision, date shifts, corruption, lost deletes, phantoms). These are not TPC-H benchmark results. The exact difference of full scans of both stores equalled the injected set, and \sys{} found all 120 keys with no false positives in two round trips and 260\,KB; verification took 0.13\,s and building both sketches 11\,s. A digest of the drivers' raw values flagged every row, because PostgreSQL returns \texttt{CHAR($n$)} values padded and Cassandra's driver returns its own date type. Loading Cassandra took 750\,s and scanning with row-by-row canonical encoding took 222\,s on PostgreSQL and 397\,s on Cassandra in Python; a sketch fed by a change stream avoids these scans.
 
 \subsection{Live TPC-C migration}
 We ran BenchBase~\cite{difallah2013} TPC-C (4 warehouses, 8 terminals) on PostgreSQL. The eight TPC-C tables with primary keys hold 1.98 million rows; \texttt{history} has no key and is excluded. Changes were read with the wal2json logical-decoding plugin~\cite{wal2json}, with full before-images. A replicator applied them to Cassandra after a fixed lag, recorded the source version in each row, and dropped 0.05\% and corrupted 0.05\% of changes. In the out-of-order run it also deferred 5\% of changes by 0.5--1.5\,s, keeping per-key order, so later changes to other keys landed first. The source sketch followed the change stream, and the target sketch followed the values the replicator wrote. Every 10\,s, with the replicator paused between batches, \sys{} compared the sketches at the target's watermark and confirmed candidates with Theorem~\ref{thm:confirm}'s rule, which reads only the target. Each report was checked against what the replicator had actually done to that key's last processed change. At the end, both sketches were compared with sketches rebuilt from full scans, and the final answer with the exact difference of those scans.
@@ -363,7 +366,7 @@ With no differences, the 187\,KB estimator costs more than a single root-hash co
 Verifying a live heterogeneous migration is a set reconciliation problem. Treating it that way makes verification cost follow the number of differences instead of the data size. At $10^7$ rows and about 1{,}100 differences, \sys{} sent $41\times$ fewer bytes than the next-best method while reading no table rows, and it found every injected fault, with none reported falsely, on real PostgreSQL and Cassandra stores.
 
 \section*{Acknowledgment}
-During the preparation of this manuscript the author used Claude (Anthropic) to assist with drafting and editing the text of all sections, writing the prototype implementation and benchmark scripts, and producing the figures and tables. All experiments were executed by running that code; every reported number comes from the resulting CSV files. The author reviewed and takes full responsibility for all content, including the verification of every citation.
+During the preparation of this manuscript the authors used Claude (Anthropic) to assist with drafting and editing the text of all sections, writing the prototype implementation and benchmark scripts, and producing the figures and tables. All experiments were executed by running that code; every reported number comes from the resulting CSV files. The authors reviewed and take full responsibility for all content, including the verification of every citation.
 
 \begin{thebibliography}{99}
 \bibitem{xu2017} J.~Xu, ``Online migrations at scale,'' Stripe Engineering Blog, Feb. 2017. [Online]. Available: \url{https://stripe.com/blog/online-migrations}
