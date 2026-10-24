@@ -1,17 +1,20 @@
 # DeltaProof
 
-Difference-proportional verification of live heterogeneous database migrations.
+Find the exact rows that differ between two databases after a migration.
 
-When a system migrates from one database to another (for example PostgreSQL to Cassandra),
-DeltaProof proves the two stores hold the same data. Each store keeps small, incrementally
-updated sketches (invertible Bloom lookup tables) over a canonical encoding of its records.
-Subtracting the two sketches and decoding the result yields the exact keys that differ, at a
-cost that grows with the number of differences, not the size of the tables, and without
-needing both stores to scan in the same key order.
+Before cutting over from one database to another (for example PostgreSQL to Cassandra),
+DeltaProof checks a quiesced snapshot of both and reports every key that is missing, extra, or
+holds a different value, and then which columns differ. A canonical encoder makes logically
+equal records compare equal across stores; each store is summarized by a small sketch
+(invertible Bloom lookup tables), so the comparison exchanges bytes proportional to the number
+of differences, not the size of the tables, and works whatever order each store keeps its rows
+in. On TPC-H `lineitem` with up to 60 million rows it found every injected fault from 260 KB of
+sketch.
 
-This repository is the reference implementation and benchmark for the paper
-*Difference-Proportional Verification of Live Heterogeneous Database Migrations with
-Invertible Bloom Lookup Tables*.
+**Demo video (under 4 minutes):** https://www.youtube.com/watch?v=jJpkxPjW1ME
+
+The library also maintains sketches from a change stream for verification while a migration
+is live (`bench/live_e2e.py`); that mode is a research prototype.
 
 ## Command-line tool
 
