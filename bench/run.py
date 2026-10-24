@@ -235,9 +235,40 @@ def rq6(scale: str, seed: int) -> None:
     write("rq6_estimate_sensitivity", rows)
 
 
+def rq7(scale: str, seed: int) -> None:
+    """Sizing policies: ladder + strata vs Wu et al.'s two rounds vs rateless IBLT, same cells."""
+    from deltaproof import sizing
+
+    n = 1_000_000
+    seeds = range(seed, seed + (3 if scale == "small" else 5))
+    rows = []
+    led = generate(n, np.random.default_rng(seed))
+    for d in (10, 100, 1_000, 10_000, 100_000):
+        for s in seeds:
+            per = {c: d // len(FAULT_CLASSES) for c in FAULT_CLASSES}
+            per["precision"] += d - sum(per.values())
+            inj = inject(led, per, np.random.default_rng(s + d))
+            truth = inj.all_keys
+            a, b, build_s = build_sketches(inj, n)
+            t0 = time.perf_counter()
+            rep = verify(a, b, table_rescan(inj.source, inj.target))
+            rows.append({"n": n, "d": len(truth), "seed": s, "method": "ladder", "bytes": rep.cost.bytes,
+                         "round_trips": rep.cost.round_trips, "cells_per_side": "", "build_s": round(build_s, 3),
+                         "decode_s": round(time.perf_counter() - t0, 4), "fallback": rep.level is None,
+                         "failed_partitions": rep.failed_partitions, "correct": rep.keys == truth})
+            for fn in (sizing.wu_two_round, sizing.riblt):
+                r = fn(inj.source, inj.target)
+                rows.append({"n": n, "d": len(truth), "seed": s, "method": r.method, "bytes": r.bytes,
+                             "round_trips": r.round_trips, "cells_per_side": r.cells, "build_s": round(r.build_s, 3),
+                             "decode_s": round(r.decode_s, 4), "fallback": r.fallback, "failed_partitions": "",
+                             "correct": r.keys == truth})
+            print(f"rq7 d={d} seed={s}: done", flush=True)
+    write("rq7_sizing_policies", rows)
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("experiments", nargs="+", choices=["rq1", "rq2", "rq3", "rq4", "rq5", "rq6"])
+    p.add_argument("experiments", nargs="+", choices=["rq1", "rq2", "rq3", "rq4", "rq5", "rq6", "rq7"])
     p.add_argument("--scale", choices=["small", "full"], default="small")
     p.add_argument("--seed", type=int, default=42)
     args = p.parse_args()
