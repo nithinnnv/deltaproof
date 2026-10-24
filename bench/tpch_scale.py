@@ -115,6 +115,8 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--duckdb", default=str(Path(__file__).resolve().parents[1] / "results" / "raw" / "tpch.duckdb"))
     p.add_argument("--skip-load", action="store_true", help="reuse data already loaded (faults are not re-injected)")
+    p.add_argument("--loaded", action="store_true",
+                   help="data was bulk-loaded by other means (infra/gcp/sf100_vm.sh); inject faults, then verify")
     args = p.parse_args()
     tag = f"{args.sf:g}".replace(".", "_")
     db = keyspace = f"tpch_sf{tag}"
@@ -125,15 +127,16 @@ def main() -> None:
     if not args.skip_load:
         import psycopg
 
-        t0 = time.perf_counter()
-        out["rows"] = generate(args.sf, path)
-        out["dbgen_s"] = round(time.perf_counter() - t0, 1)
-        print(f"generated {out['rows']:,} rows in {out['dbgen_s']} s", flush=True)
-        with psycopg.connect(PG_ADMIN, autocommit=True) as admin:
-            admin.execute(f"DROP DATABASE IF EXISTS {db} WITH (FORCE)")
-            admin.execute(f"CREATE DATABASE {db}")
-        out.update(load(path, db, keyspace, args.load_processes))
-        print(f"loaded: {out}", flush=True)
+        if not args.loaded:
+            t0 = time.perf_counter()
+            out["rows"] = generate(args.sf, path)
+            out["dbgen_s"] = round(time.perf_counter() - t0, 1)
+            print(f"generated {out['rows']:,} rows in {out['dbgen_s']} s", flush=True)
+            with psycopg.connect(PG_ADMIN, autocommit=True) as admin:
+                admin.execute(f"DROP DATABASE IF EXISTS {db} WITH (FORCE)")
+                admin.execute(f"CREATE DATABASE {db}")
+            out.update(load(path, db, keyspace, args.load_processes))
+            print(f"loaded: {out}", flush=True)
         pg = psycopg.connect(pg_url(db), autocommit=True)
         pg.execute("ANALYZE lineitem")
         cluster, cs = connect_cassandra()
