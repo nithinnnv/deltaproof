@@ -247,6 +247,7 @@ class Live:
         self.last_status: dict[Key, tuple[str, int]] = {}
         self.faulty: dict[Key, tuple[str, int]] = {}  # keys whose last processed change was faulty
         self.reported_cache: dict[Key, int] = {}  # key -> version of its last processed change when reported
+        self.in_flight: set = set()  # keys of the batch being written to the target right now
         self.queue: deque = deque()
         self.deferred: list = []  # (release_time, lsn, item)
         self.blocked: dict[Key, float] = {}  # key -> release time of its latest deferred change
@@ -414,28 +415,36 @@ class Live:
                     status.append((key, "ok", lsn))
                 final[key] = (spec, row, parts, lsn)
                 self.stats.lag_samples.append(now - arrived)
+            # The store write happens outside the lock, so checks never wait behind network writes.
+            # The sketch, statuses and watermark are updated together under the lock afterwards, so a check
+            # always sees a target sketch that reflects exactly the changes up to the watermark; a check that
+            # reads the target meanwhile may see newer rows, which confirmation allows.
+            batch_keys = list(final)
+            with self.tlock:
+                self.in_flight.update(batch_keys)
+            target.write(list(final.values()))
+            self.stats.applied_ops += len(final)
+            t1 = time.perf_counter()
             old_k, old_d, new_k, new_d = [], [], [], []
-            with self.tlock:  # a batch is written and accounted for atomically w.r.t. verification
-                target.write(list(final.values()))
-                self.stats.applied_ops += len(final)
-                t1 = time.perf_counter()
-                for key, (spec, row, parts, lsn) in final.items():
-                    prev = self.last_t.get(key)
-                    if prev is not None:
-                        old_k.append(key)
-                        old_d.append(prev)
-                    if row is None:
-                        self.last_t.pop(key, None)
-                    else:
-                        d = spec.digest(row)
-                        self.last_t[key] = d
-                        new_k.append(key)
-                        new_d.append(d)
-                u = lambda x: np.array(x, dtype=np.uint64)
+            for key, (spec, row, parts, lsn) in final.items():  # last_t is touched only by this thread
+                prev = self.last_t.get(key)
+                if prev is not None:
+                    old_k.append(key)
+                    old_d.append(prev)
+                if row is None:
+                    self.last_t.pop(key, None)
+                else:
+                    d = spec.digest(row)
+                    self.last_t[key] = d
+                    new_k.append(key)
+                    new_d.append(d)
+            u = lambda x: np.array(x, dtype=np.uint64)
+            with self.tlock:
                 if old_k:
                     self.tgt_update(u([k[0] for k in old_k]), u([k[1] for k in old_k]), u(old_d), -1)
                 if new_k:
                     self.tgt_update(u([k[0] for k in new_k]), u([k[1] for k in new_k]), u(new_d), +1)
+                self.in_flight.difference_update(batch_keys)
                 for key, st, lsn in status:
                     self.last_status[key] = (st, lsn)
                     if st in FAULTY:  # small map of currently faulty keys, cheap to copy at checks
@@ -542,7 +551,8 @@ class Live:
         t1 = time.perf_counter()
         with self.tlock:  # phase 2: confirm, re-reading only keys that may have changed
             version = lambda k: self.last_status[k][1] if k in self.last_status else None
-            cached = [k for k in cands if k in self.reported_cache and self.reported_cache[k] == version(k)]
+            cached = [k for k in cands if k in self.reported_cache and self.reported_cache[k] == version(k)
+                      and k not in self.in_flight]  # a key being written now may have a new row: read it
             cached_set = set(cached)
             fresh = [k for k in cands if k not in cached_set]
             reported = cached + (self.confirm_many(target, fresh) if fresh else [])
