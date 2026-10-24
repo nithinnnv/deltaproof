@@ -41,7 +41,7 @@ Moving a system's data to a different database is a common reengineering step: a
 
 Two problems make heterogeneous verification hard. First, the same logical record has different physical forms: PostgreSQL returns \texttt{CHAR(25)} values padded with spaces and Cassandra returns them trimmed; one driver returns a \texttt{date}, the other its own date type; decimals, time zones and timestamp precision differ. A checksum over raw values reports nearly every row as different. Second, the useful answer is the list of differing keys and what differs in them, which is usually tiny compared with the tables.
 
-\sys{} treats verification as set reconciliation~\cite{eppstein2011}: each store becomes a set of (key, value digest) elements under a canonical encoding, and the tool computes the symmetric difference of the two sets. This paper covers verification of a quiesced snapshot, such as before cutover or after a backfill. It contributes:
+\sys{} treats verification as set reconciliation~\cite{eppstein2011}: each store becomes a set of (key, value digest) elements under a canonical encoding, and the tool computes the symmetric difference of the two sets. This paper covers verification of a quiesced snapshot, such as before cutover or after a backfill. In a migration workflow, \sys{} is a gate: after the backfill and before each cutover step, a script runs \texttt{deltaproof verify}, stops on a nonzero exit status, and passes the JSON report to \texttt{deltaproof inspect} and to the backfill job that re-copies the reported rows; the same command can run in CI against staging copies whenever the schema mapping changes. It contributes:
 \begin{itemize}
 \item a command-line tool that, given a short table specification and two connection URLs, prints every missing, extra and mismatched key, and a diagnosis command that shows the differing columns (Section~\ref{sec:use});
 \item a canonical record encoder for relational and wide-column stores, with keys of any type (Section~\ref{sec:arch});
@@ -65,9 +65,9 @@ columns = """l_partkey:i l_suppkey:i l_quantity:d2
 \end{lstlisting}
 
 \subsection{Finding the differences}
-One command compares two databases (Listing~\ref{lst:run}). When the stores sit in different networks, \texttt{deltaproof sketch} runs next to each store and writes a sketch file, and \texttt{deltaproof diff} compares the files anywhere. A file holding every size of sketch is about 20 bytes per row, little less than the rows' digests; with \texttt{--max-differences 1000} it holds only the sizes needed for up to 1{,}000 differences, 232\,KB for 600{,}000 rows. If more differences turn up, \texttt{diff} falls back to an exact comparison of the stores named by \texttt{--source} and \texttt{--target}.
+One command compares two databases (Listing~\ref{lst:run}). When the stores sit in different networks, \texttt{deltaproof sketch} runs next to each store and writes a sketch file, and \texttt{deltaproof diff} compares the files anywhere. A file holding every size of sketch is about 20 bytes per row, little less than the rows' digests; with \texttt{-{}-max-differences 1000} it holds only the sizes needed for up to 1{,}000 differences, 232\,KB for 600{,}000 rows. If more differences turn up, \texttt{diff} falls back to an exact comparison of the stores named by \texttt{-{}-source} and \texttt{-{}-target}.
 
-\begin{lstlisting}[caption={Comparing PostgreSQL with Cassandra (\texttt{--limit 1})}, label={lst:run}]
+\begin{lstlisting}[caption={Comparing PostgreSQL with Cassandra (\texttt{-{}-limit 1})}, label={lst:run}]
 $ deltaproof verify --spec lineitem.toml \
     --source postgresql://user:pw@pg:5432/tpch \
     --target cassandra://cass:9042/tpch --limit 1
@@ -86,7 +86,7 @@ rescanned 0 rows
 \end{lstlisting}
 
 \subsection{Diagnosing and fixing them}
-With \texttt{--json}, the report is one object: \texttt{differences}, the estimate and sketch level used, a \texttt{cost} object (bytes, round trips, rows rescanned), and for each class (\texttt{missing\_in\_target}, \texttt{extra\_in\_target}, \texttt{value\_mismatch}) a \texttt{count} and a list of keys, each with its table and key columns. \texttt{deltaproof inspect} takes that report, reads each key from both stores and prints the columns whose canonical values differ (Listing~\ref{lst:inspect}); differences that are only formatting, such as padding or decimal scale, are not shown, because they are not differences. Its \texttt{--json} output lists, per key, the class, whether each store has the row, and each differing column with both values. On the SF~1 run of Section~\ref{sec:eval}, \texttt{inspect} named exactly one column for each of the 60 value mismatches: \texttt{l\_extendedprice}, \texttt{l\_shipdate} and \texttt{l\_comment}, 20 each, the three injected value faults.
+With \texttt{-{}-json}, the report is one object: \texttt{differences}, the estimate and sketch level used, a \texttt{cost} object (bytes, round trips, rows rescanned), and for each class (\texttt{missing\_in\_target}, \texttt{extra\_in\_target}, \texttt{value\_mismatch}) a \texttt{count} and a list of keys, each with its table and key columns. \texttt{deltaproof inspect} takes that report, reads each key from both stores and prints the columns whose canonical values differ (Listing~\ref{lst:inspect}); differences that are only formatting, such as padding or decimal scale, are not shown, because they are not differences. Its \texttt{-{}-json} output lists, per key, the class, whether each store has the row, and each differing column with both values. On the SF~1 run of Section~\ref{sec:eval}, \texttt{inspect} named exactly one column for each of the 60 value mismatches: \texttt{l\_extendedprice}, \texttt{l\_shipdate} and \texttt{l\_comment}, 20 each, the three injected value faults.
 
 \begin{lstlisting}[caption={Diagnosing reported keys at SF~1 (excerpt)}, label={lst:inspect}]
 $ deltaproof verify ... --json --limit -1 > report.json
@@ -128,7 +128,7 @@ A typical repair loop exports the reported keys, re-copies those rows with the m
 
 Fig.~\ref{fig:arch} shows the pipeline. The library, scanners and command line are about 1{,}400 lines of Python with NumPy; baselines and benchmarks are separate.
 
-\emph{Scanning.} By default each store is read by up to eight worker processes, each with its own connection, reading one slice and encoding it locally; only the encoded elements, 24 bytes per row, return to the coordinator. PostgreSQL tables are sliced by physical block range, using TID range scans, so slicing does not depend on key types or skew; the coordinator exports a repeatable-read snapshot and every worker imports it, so all slices read one consistent state. Cassandra tables are sliced by token range over the table's partition key, read from cluster metadata. \texttt{--workers 1} uses a single cursor. A new store needs an adapter that yields rows as dictionaries, and optionally a slicing rule.
+\emph{Scanning.} By default each store is read by up to eight worker processes, each with its own connection, reading one slice and encoding it locally; only the encoded elements, 24 bytes per row, return to the coordinator. PostgreSQL tables are sliced by physical block range, using TID range scans, so slicing does not depend on key types or skew; the coordinator exports a repeatable-read snapshot and every worker imports it, so all slices read one consistent state. Cassandra tables are sliced by token range over the table's partition key, read from cluster metadata. \texttt{-{}-workers 1} uses a single cursor. A new store needs an adapter that yields rows as dictionaries, and optionally a slicing rule.
 
 \emph{The canonical encoder} turns a row into an element: a 128-bit key and a 64-bit digest of the values. Decimals become integers at the declared scale, so \texttt{10.5} and \texttt{10.50} agree; timestamps become UTC at the declared unit; text is Unicode NFC, hashed with BLAKE2b; fixed-width strings drop their padding; floats compare by their IEEE-754 bits; and nulls carry their own tag, so null, the empty string and zero differ. Table~\ref{tab:forms} lists differences between the two drivers' forms of the same value that the encoder absorbs; on \texttt{lineitem}, the first two alone made a raw-value checksum flag every row.
 
@@ -151,7 +151,7 @@ decimal & column scale & value's scale & scaled integer\\
 
 \emph{Keys.} The 128-bit key carries an 8-bit table tag, so one sketch covers many tables. Keys of up to four integer columns below $2^{30}$ are packed directly and decode back to their values. Any other key, such as a text or alphanumeric natural key, a key of more columns, or wide integers, is hashed with BLAKE2b into the remaining 120 bits from its canonical parts, length-prefixed so that \texttt{("E","UACME")} and \texttt{("EU","ACME")} differ. Distinct keys then collide with probability about $n^2/2^{121}$. The limit is therefore one of the packing, not of the method: a hashed key cannot be decoded from the sketch, so the tool maps reported hashes back to key values with a key-only scan of the stores.
 
-\emph{Sketches.} An IBLT is an array of cells; each element is added to three cells, and each cell keeps a count and XOR sums of keys, digests and a checksum~\cite{goodrich2011}. Subtracting the target's IBLT from the source's cancels every common element, and \emph{peeling} cells that hold a single element recovers the difference. Peeling succeeds with high probability while a table has comfortably more cells than differences (asymptotically about 1.23 cells per difference); beyond that it stalls with cells left over, which the tool detects. The difference size is unknown in advance, so each store keeps a \emph{ladder} of IBLTs at capacities $64\cdot8^i$ up to one eighth of the row count, split by key hash into partitions of about 256 differences each, plus a strata estimator~\cite{eppstein2011}. The comparison reads the estimator first, then the smallest level with 25\% headroom over the estimate. A partition that fails to peel is compared row by row; if no level is large enough, the whole table is compared. An inaccurate estimate therefore costs bandwidth and time, never correctness (Section~\ref{sec:eval}). The ladder adds about 17 bytes per row.
+\emph{Sketches.} An IBLT is an array of cells; each element is added to three cells, and each cell keeps a count and XOR sums of keys, digests and a checksum~\cite{goodrich2011}. Subtracting the target's IBLT from the source's cancels every common element, and \emph{peeling} cells that hold a single element recovers the difference. Peeling succeeds with high probability while a table has comfortably more cells than differences (asymptotically about 1.23 cells per difference); beyond that it stalls with cells left over, which the tool detects. The difference size is unknown in advance, so each store keeps a \emph{ladder} of IBLTs. Level $i$ is sized for $C_i=64\cdot8^i$ differences, for $i=0,1,\dots$ up to the first level with $C_i\ge n/8$ for $n$ rows (or $C_i\ge1.25$ times \texttt{-{}-max-differences}). It is split by key hash into $P_i=\max(1,C_i/256)$ partitions, each an IBLT of about $2C_i/P_i$ cells, two per difference. A 32-stratum estimator~\cite{eppstein2011} completes the sketch. The comparison reads the estimator first, then the smallest level with 25\% headroom over the estimate. A partition that fails to peel is compared row by row; if no level is large enough, the whole table is compared. An inaccurate estimate therefore costs bandwidth and time, never correctness (Section~\ref{sec:eval}). The ladder adds about 17 bytes per row.
 
 \section{Evaluation}\label{sec:eval}
 We ran PostgreSQL~16.4 and Cassandra~4.1.6 as single nodes in Docker on one Apple M1 Pro laptop (10 cores, 16\,GB), with Python~3.13. Faults were injected with SQL and CQL statements, and the ground truth was the exact difference of full scans of both stores.
@@ -220,13 +220,13 @@ Cassandra & 292.5 & 138.6 & 87.4 & 37.6\\
 \caption{Cost of a forced estimate, $10^6$ rows: MB / rows rescanned}
 \label{tab:sens}
 \centering\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lrrrr@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lrrrrr@{}}
 \toprule
-Factor & 1/16 & 1 & 4 & 16\\
+Factor & 1/16 & 1/4 & 1 & 4 & 16\\
 \midrule
-1{,}125 keys & 48.3 / 2.0M & 0.78 / 0 & 4.9 / 0 & 38.0 / 0\\
-11{,}250 keys & 48.7 / 2.0M & 5.3 / 15.8K & 38.1 / 2.0K & 48.2 / 2.0M\\
+1{,}125 keys & 48.3/2.0M & 0.78/0 & 0.78/0 & 4.9/0 & 38.0/0\\
+11{,}250 keys & 48.7/2.0M & 5.3/15.8K & 5.3/15.8K & 38.1/2.0K & 48.2/2.0M\\
 \bottomrule
 \end{tabular}
 \end{table}
