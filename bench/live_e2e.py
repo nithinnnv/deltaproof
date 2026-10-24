@@ -248,6 +248,7 @@ class Live:
         self.faulty: dict[Key, tuple[str, int]] = {}  # keys whose last processed change was faulty
         self.reported_cache: dict[Key, int] = {}  # key -> version of its last processed change when reported
         self.in_flight: set = set()  # keys of the batch being written to the target right now
+        self.misses: list[dict] = []  # every fault at or below the watermark that a check did not report
         self.queue: deque = deque()
         self.deferred: list = []  # (release_time, lsn, item)
         self.blocked: dict[Key, float] = {}  # key -> release time of its latest deferred change
@@ -489,11 +490,12 @@ class Live:
         self.tgt.update(khi, klo, dig, sign)
 
     def snapshot_extra(self):
-        """Hook: copy any other sketches while verify_now holds the lock."""
+        """Hook: copy the target side of any other sketches while verify_now holds the lock."""
         return None
 
     def compare_extra(self, state, candidates: set) -> dict:
-        """Hook: compare the copies from snapshot_extra (unlocked). Returns fields for the record."""
+        """Hook: compare other source sketches (already advanced to the watermark) with the target copies
+        from snapshot_extra, unlocked. Returns fields for the record."""
         return {}
 
     def valid_states(self, key: Key) -> list:
@@ -538,21 +540,23 @@ class Live:
         fault repaired by a later change before the read is no longer a divergence and is not
         counted as missed."""
         t0 = time.perf_counter()
-        with self.tlock:  # phase 1: freeze the state at the watermark (copies only)
+        with self.tlock:  # phase 1: the watermark and a copy of what the replicator modifies (target side)
             w = self.w_t
-            self.advance_source(w)
-            src, tgt = copy.deepcopy(self.src), copy.deepcopy(self.tgt)
+            tgt = copy.deepcopy(self.tgt)
             extra_state = self.snapshot_extra()
         lock_ms = (time.perf_counter() - t0) * 1000
-        rep = verify(src, tgt, self.full_rescan(pg, target))
+        # Only the verifier changes the source sketch, so it advances to w without pausing the replicator.
+        self.advance_source(w)
+        rep = verify(self.src, tgt, self.full_rescan(pg, target))
         t_sketch = time.perf_counter() - t0
         cands = sorted(rep.keys)
         extra = self.compare_extra(extra_state, set(cands))  # other sketches, same frozen instant
         t1 = time.perf_counter()
         with self.tlock:  # phase 2: confirm, re-reading only keys that may have changed
             version = lambda k: self.last_status[k][1] if k in self.last_status else None
+            writing = set(self.in_flight)
             cached = [k for k in cands if k in self.reported_cache and self.reported_cache[k] == version(k)
-                      and k not in self.in_flight]  # a key being written now may have a new row: read it
+                      and k not in writing]  # a key being written now may have a new row: read it
             cached_set = set(cached)
             fresh = [k for k in cands if k not in cached_set]
             reported = cached + (self.confirm_many(target, fresh) if fresh else [])
@@ -560,8 +564,15 @@ class Live:
             faulty = dict(self.faulty)
             status = {k: self.last_status.get(k) for k in reported}
         lock_ms += (time.perf_counter() - t1) * 1000
-        truth_now = {k for k, (st, lsn) in faulty.items() if lsn <= w}
+        # Ground truth at the instant of confirmation. A key whose new change is being written right now has
+        # a status about to change (its row may already hold a newer, valid state), so it is left out and counted.
+        truth_all = {k for k, (st, lsn) in faulty.items() if lsn <= w}
+        truth_now = truth_all - writing
         rep_set = set(reported)
+        for k in sorted(truth_now - rep_set):  # every miss is logged with its context, for audit
+            self.misses.append({"t": round(time.monotonic() - self.t_start, 1), "key": k, "watermark": w,
+                                "status": faulty.get(k), "last_status": self.last_status.get(k),
+                                "candidate": k in set(cands), "valid_states": self.valid_states(k)})
         false_rep = [k for k in reported if (status.get(k) or ("ok", 0))[0] not in FAULTY]
         rec = {"label": label, "t": round(time.monotonic() - self.t_start, 1), "watermark": w,
                "estimate": rep.estimate, "level": rep.level, "bytes": rep.cost.bytes,
@@ -569,6 +580,7 @@ class Live:
                "failed_partitions": rep.failed_partitions, "candidates": len(cands),
                "reported": len(reported), "reported_false": len(false_rep),
                "faulty_at_or_below_w": len(truth_now), "missed": len(truth_now - rep_set),
+               "faulty_being_rewritten": len(truth_all & writing),
                "target_point_reads": len(fresh), "cached_verdicts": len(cached),
                "sketch_ms": round(t_sketch * 1000, 1), "replicator_paused_ms": round(lock_ms, 1),
                "total_ms": round((time.perf_counter() - t0) * 1000, 1), **extra}
@@ -672,7 +684,7 @@ def run_live(args) -> None:
     })
     pg.execute(f"SELECT pg_drop_replication_slot('{SLOT}')")
     cluster.shutdown()
-    write_results(tag, out, live.verifications, live.reports)
+    write_results(tag, out, live.verifications, live.reports, live.misses)
 
 
 def run_baseline(args) -> None:
@@ -685,14 +697,14 @@ def run_baseline(args) -> None:
     write_results(tag, out, [], [])
 
 
-def write_results(tag: str, out: dict, verifications: list, reports: list) -> None:
+def write_results(tag: str, out: dict, verifications: list, reports: list, misses: list = ()) -> None:
     d = ROOT / "results" / "live"
     d.mkdir(parents=True, exist_ok=True)
     with (d / f"{tag}.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["metric", "value"])
         w.writerows(out.items())
-    for name, rows in (("verifications", verifications), ("false_reports", reports)):
+    for name, rows in (("verifications", verifications), ("false_reports", reports), ("missed", list(misses))):
         if rows:
             with (d / f"{tag}_{name}.csv").open("w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=list(rows[0]))

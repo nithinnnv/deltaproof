@@ -276,12 +276,12 @@ class ClusterLive(Live):
         self.poll_done.set()
 
     def snapshot_extra(self):
-        return copy.deepcopy(self.src_r), copy.deepcopy(self.tgt_r)  # same frozen instant as the ladder
+        return copy.deepcopy(self.tgt_r)  # target side, same frozen instant as the ladder's target copy
 
     def compare_extra(self, state, candidates: set) -> dict:
+        # Called after the source has been advanced to the same watermark; only the verifier changes it.
         t0 = time.perf_counter()
-        src_r, tgt_r = state
-        r = src_r.compare(tgt_r)
+        r = self.src_r.compare(state)
         return {"riblt_bytes": r.bytes, "riblt_symbols": r.cells,
                 "riblt_decode_ms": round((time.perf_counter() - t0) * 1000, 1),
                 "riblt_candidates_equal_ladder": r.keys == candidates}
@@ -448,6 +448,7 @@ def run_live(args) -> None:
         "live_reported_total": sum(v["reported"] for v in lv),
         "live_reported_false_total": sum(v["reported_false"] for v in lv),
         "live_missed_total": sum(v["missed"] for v in lv),
+        "live_faulty_being_rewritten_total": sum(v["faulty_being_rewritten"] for v in lv),
         "live_check_ms_median": float(np.median([v["total_ms"] for v in lv])) if lv else None,
         "live_replicator_paused_ms_median": float(np.median([v["replicator_paused_ms"] for v in lv])) if lv else None,
         "live_target_point_reads_total": sum(v["target_point_reads"] for v in lv),
@@ -462,10 +463,10 @@ def run_live(args) -> None:
     })
     drop_connector(name)
     cluster.shutdown()
-    write(tag, out, live.verifications, live.reports)
+    write(tag, out, live.verifications, live.reports, live.misses)
 
 
-def write(tag: str, out: dict, verifications: list, reports: list) -> None:
+def write(tag: str, out: dict, verifications: list, reports: list, misses: list = ()) -> None:
     import csv
 
     d = ROOT / "results" / "cluster"
@@ -474,7 +475,7 @@ def write(tag: str, out: dict, verifications: list, reports: list) -> None:
         w = csv.writer(f)
         w.writerow(["metric", "value"])
         w.writerows(out.items())
-    for name, rows in (("verifications", verifications), ("false_reports", reports)):
+    for name, rows in (("verifications", verifications), ("false_reports", reports), ("missed", list(misses))):
         if rows:
             keys = list(dict.fromkeys(k for r in rows for k in r))
             with (d / f"{tag}_{name}.csv").open("w", newline="") as f:
