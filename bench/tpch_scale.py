@@ -199,7 +199,9 @@ def main() -> None:
         out["scan_difference_equals_injected"] = scan_truth == truth
         out["false_positives"] = len(rep.keys - truth)
         out["recall"] = len(rep.keys & truth) / len(truth)
-    out["coordinator_peak_rss_gb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 2)
+    # ru_maxrss is in KiB on Linux and in bytes on macOS
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform == "darwin" else 1024)
+    out["coordinator_peak_rss_gb"] = round(rss / 2**30, 2)
     for k, v in out.items():
         print(f"{k:34} {v}")
     path_out = Path(__file__).resolve().parents[1] / "results" / f"tpch_scale_sf{tag}.csv"

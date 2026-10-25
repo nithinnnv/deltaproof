@@ -1,0 +1,257 @@
+In file included from dss.h:81,
+                 from build.c:45:
+config.h:151: warning: "_POSIX_C_SOURCE" redefined
+  151 | #define _POSIX_C_SOURCE 200112L
+      | 
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdio.h:27,
+                 from build.c:35:
+/usr/include/features.h:290: note: this is the location of the previous definition
+  290 | # define _POSIX_C_SOURCE        200809L
+      | 
+config.h:152: warning: "_POSIX_SOURCE" redefined
+  152 | #define _POSIX_SOURCE
+      | 
+/usr/include/features.h:288: note: this is the location of the previous definition
+  288 | # define _POSIX_SOURCE  1
+      | 
+bm_utils.c: In function ‘mk_ascdate’:
+bm_utils.c:544:16: warning: implicit declaration of function ‘strdup’ [-Wimplicit-function-declaration]
+  544 |         m[i] = strdup(t.alpha);
+      |                ^~~~~~
+bm_utils.c:544:16: warning: incompatible implicit declaration of built-in function ‘strdup’ [-Wbuiltin-declaration-mismatch]
+In file included from dss.h:81,
+                 from print.c:46:
+config.h:151: warning: "_POSIX_C_SOURCE" redefined
+  151 | #define _POSIX_C_SOURCE 200112L
+      | 
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdio.h:27,
+                 from print.c:37:
+/usr/include/features.h:290: note: this is the location of the previous definition
+  290 | # define _POSIX_C_SOURCE        200809L
+      | 
+config.h:152: warning: "_POSIX_SOURCE" redefined
+  152 | #define _POSIX_SOURCE
+      | 
+/usr/include/features.h:288: note: this is the location of the previous definition
+  288 | # define _POSIX_SOURCE  1
+      | 
+In file included from load_stub.c:32:
+config.h:151: warning: "_POSIX_C_SOURCE" redefined
+  151 | #define _POSIX_C_SOURCE 200112L
+      | 
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdio.h:27,
+                 from load_stub.c:31:
+/usr/include/features.h:290: note: this is the location of the previous definition
+  290 | # define _POSIX_C_SOURCE        200809L
+      | 
+config.h:152: warning: "_POSIX_SOURCE" redefined
+  152 | #define _POSIX_SOURCE
+      | 
+/usr/include/features.h:288: note: this is the location of the previous definition
+  288 | # define _POSIX_SOURCE  1
+      | 
+In file included from dss.h:81,
+                 from speed_seed.c:53:
+config.h:151: warning: "_POSIX_C_SOURCE" redefined
+  151 | #define _POSIX_C_SOURCE 200112L
+      | 
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdio.h:27,
+                 from speed_seed.c:51:
+/usr/include/features.h:290: note: this is the location of the previous definition
+  290 | # define _POSIX_C_SOURCE        200809L
+      | 
+config.h:152: warning: "_POSIX_SOURCE" redefined
+  152 | #define _POSIX_SOURCE
+      | 
+/usr/include/features.h:288: note: this is the location of the previous definition
+  288 | # define _POSIX_SOURCE  1
+      | 
+In file included from qgen.c:39:
+config.h:151: warning: "_POSIX_C_SOURCE" redefined
+  151 | #define _POSIX_C_SOURCE 200112L
+      | 
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdio.h:27,
+                 from qgen.c:30:
+/usr/include/features.h:290: note: this is the location of the previous definition
+  290 | # define _POSIX_C_SOURCE        200809L
+      | 
+config.h:152: warning: "_POSIX_SOURCE" redefined
+  152 | #define _POSIX_SOURCE
+      | 
+/usr/include/features.h:288: note: this is the location of the previous definition
+  288 | # define _POSIX_SOURCE  1
+      | 
+2026-10-24 21:14:06 step tools done
+2026-10-24 21:14:06 generating lineitem SF 100 in 32 chunks
+2026-10-24 21:16:58 generated: 74G
+2026-10-24 21:16:58 step gen done
+Unable to find image 'postgres:16.4' locally
+16.4: Pulling from library/postgres
+2d429b9e73a6: Pulling fs layer
+46eab5b44a35: Pulling fs layer
+c4d302cc468d: Pulling fs layer
+01e0882c90d9: Pulling fs layer
+531ee2cf3c0c: Pulling fs layer
+ed54a7dee1d8: Pulling fs layer
+12c5c803443f: Pulling fs layer
+e27c75a98748: Pulling fs layer
+e73cb4a42719: Pulling fs layer
+a83b68436f09: Pulling fs layer
+787d6bee9571: Pulling fs layer
+13ff0988aaea: Pulling fs layer
+4b82842ab819: Pulling fs layer
+7e568a0dc8fb: Pulling fs layer
+531ee2cf3c0c: Waiting
+ed54a7dee1d8: Waiting
+12c5c803443f: Waiting
+e27c75a98748: Waiting
+e73cb4a42719: Waiting
+a83b68436f09: Waiting
+787d6bee9571: Waiting
+13ff0988aaea: Waiting
+4b82842ab819: Waiting
+7e568a0dc8fb: Waiting
+01e0882c90d9: Waiting
+46eab5b44a35: Verifying Checksum
+46eab5b44a35: Download complete
+c4d302cc468d: Verifying Checksum
+c4d302cc468d: Download complete
+01e0882c90d9: Verifying Checksum
+01e0882c90d9: Download complete
+2d429b9e73a6: Verifying Checksum
+2d429b9e73a6: Download complete
+531ee2cf3c0c: Verifying Checksum
+531ee2cf3c0c: Download complete
+12c5c803443f: Verifying Checksum
+12c5c803443f: Download complete
+ed54a7dee1d8: Verifying Checksum
+ed54a7dee1d8: Download complete
+e27c75a98748: Verifying Checksum
+e27c75a98748: Download complete
+a83b68436f09: Download complete
+787d6bee9571: Verifying Checksum
+787d6bee9571: Download complete
+13ff0988aaea: Verifying Checksum
+13ff0988aaea: Download complete
+4b82842ab819: Verifying Checksum
+4b82842ab819: Download complete
+7e568a0dc8fb: Verifying Checksum
+7e568a0dc8fb: Download complete
+e73cb4a42719: Verifying Checksum
+e73cb4a42719: Download complete
+2d429b9e73a6: Pull complete
+46eab5b44a35: Pull complete
+c4d302cc468d: Pull complete
+01e0882c90d9: Pull complete
+531ee2cf3c0c: Pull complete
+ed54a7dee1d8: Pull complete
+12c5c803443f: Pull complete
+e27c75a98748: Pull complete
+e73cb4a42719: Pull complete
+a83b68436f09: Pull complete
+787d6bee9571: Pull complete
+13ff0988aaea: Pull complete
+4b82842ab819: Pull complete
+7e568a0dc8fb: Pull complete
+Digest: sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412
+Status: Downloaded newer image for postgres:16.4
+Unable to find image 'cassandra:4.1.6' locally
+4.1.6: Pulling from library/cassandra
+7478e0ac0f23: Pulling fs layer
+90a925ab929a: Pulling fs layer
+c0f17d82e63e: Pulling fs layer
+160911679b10: Pulling fs layer
+5dc57f7209ba: Pulling fs layer
+6c2774c49203: Pulling fs layer
+3008a0bdf258: Pulling fs layer
+47f9d23ea9e0: Pulling fs layer
+8b3d4d664e03: Pulling fs layer
+906cb9380acc: Pulling fs layer
+5dc57f7209ba: Waiting
+6c2774c49203: Waiting
+3008a0bdf258: Waiting
+47f9d23ea9e0: Waiting
+906cb9380acc: Waiting
+8b3d4d664e03: Waiting
+160911679b10: Waiting
+7478e0ac0f23: Download complete
+90a925ab929a: Verifying Checksum
+90a925ab929a: Download complete
+c0f17d82e63e: Verifying Checksum
+c0f17d82e63e: Download complete
+160911679b10: Verifying Checksum
+160911679b10: Download complete
+5dc57f7209ba: Verifying Checksum
+5dc57f7209ba: Download complete
+6c2774c49203: Verifying Checksum
+6c2774c49203: Download complete
+47f9d23ea9e0: Download complete
+906cb9380acc: Verifying Checksum
+906cb9380acc: Download complete
+3008a0bdf258: Verifying Checksum
+3008a0bdf258: Download complete
+8b3d4d664e03: Verifying Checksum
+8b3d4d664e03: Download complete
+7478e0ac0f23: Pull complete
+90a925ab929a: Pull complete
+c0f17d82e63e: Pull complete
+160911679b10: Pull complete
+5dc57f7209ba: Pull complete
+6c2774c49203: Pull complete
+3008a0bdf258: Pull complete
+47f9d23ea9e0: Pull complete
+8b3d4d664e03: Pull complete
+906cb9380acc: Pull complete
+Digest: sha256:84ea53fe00297fa8e4d91528a6c28137d4b1feb6a90d59da2bcb2c0f314d2901
+Status: Downloaded newer image for cassandra:4.1.6
+2026-10-24 21:18:26 step stores done
+2026-10-24 21:18:26 loading PostgreSQL
+2026-10-24 21:18:26 loading Cassandra with DSBulk
+NOTICE:  database "tpch_sf100" does not exist, skipping
+2026-10-24 21:38:14 PostgreSQL rows: 600037902
+2026-10-24 21:38:14 step pg done
+--- resumed after Spot preemption
+2026-10-24 21:58:30 loading Cassandra with DSBulk
+600,037,902 |      0 | 128,710 |  6.52 | 52.43 | 140.51 |    1.00
+Operation LOAD_20261024-215834-810694 completed successfully in 1 hour, 17 minutes and 41 seconds.
+Checkpoints for the current operation were written to checkpoint.csv.
+To resume the current operation, re-run it with the same settings, and add the following command line flag:
+--dsbulk.log.checkpoint.file=/data/dsbulk-logs/LOAD_20261024-215834-810694/checkpoint.csv
+2026-10-24 23:16:20 step cass done
+2026-10-24 23:16:20 injecting 120 faults and verifying
+injected 120 faults
+scanned: {'sf': 100.0, 'workers': 32, 'max_differences': 100000, 'injected_keys': 120, 'scan_postgres_s': 1730.7, 'scan_cassandra_s': 2712.9, 'rows_source': 600037882, 'rows_target': 600037902}
+--- resumed on a regular VM (verify only)
+2026-10-25 01:09:47 resuming: verifying without injecting again
+scanned: {'sf': 100.0, 'workers': 32, 'max_differences': 100000, 'scan_postgres_s': 1672.9, 'scan_cassandra_s': 2507.3, 'rows_source': 600037882, 'rows_target': 600037902}
+Killed
+--- rerun after out-of-memory (bounded-memory verify, scan cache)
+2026-10-25 04:35:41 resuming: verifying without injecting again
+scanned: {'sf': 100.0, 'workers': 32, 'max_differences': 100000, 'scan_postgres_s': 1639.5, 'scan_cassandra_s': 2613.6, 'rows_source': 600037882, 'rows_target': 600037902}
+sf                                 100.0
+workers                            32
+max_differences                    100000
+scan_postgres_s                    1639.5
+scan_cassandra_s                   2613.6
+rows_source                        600037882
+rows_target                        600037902
+sketch_build_s                     2505.4
+sketch_memory_bytes_per_store      21705516
+verify_s                           0.046
+found                              120
+bytes                              260496
+round_trips                        2
+rows_rescanned                     0
+level                              1
+exact_diff_s                       344.5
+scan_difference_keys               120
+found_equals_scan_difference       True
+coordinator_peak_rss_gb            0.04
+wrote /home/macintoshhd/deltaproof/results/tpch_scale_sf100.csv
+2026-10-25 06:34:30 step verify done
+2026-10-25 06:34:30 SF100 DONE
