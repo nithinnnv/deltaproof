@@ -90,8 +90,17 @@ wait
 is_done pg && is_done cass || { log "a load failed"; exit 1; }
 
 if ! is_done verify; then
-  log "injecting 120 faults and verifying"
-  cd ~/deltaproof && ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --loaded --workers 32 --max-differences 100000
+  cd ~/deltaproof
+  if [ -f "$WORK/inject.started" ]; then
+    # Faults were injected by an interrupted attempt: verify only. The ground truth is then the exact
+    # difference of full scans of both stores (it must be the 120 injected keys).
+    log "resuming: verifying without injecting again"
+    ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --skip-load --workers 32 --max-differences 100000
+  else
+    touch "$WORK/inject.started"
+    log "injecting 120 faults and verifying"
+    ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --loaded --workers 32 --max-differences 100000
+  fi
   done_ verify
 fi
 log "SF100 DONE"
