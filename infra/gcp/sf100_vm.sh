@@ -95,11 +95,11 @@ if ! is_done verify; then
     # Faults were injected by an interrupted attempt: verify only. The ground truth is then the exact
     # difference of full scans of both stores (it must be the 120 injected keys).
     log "resuming: verifying without injecting again"
-    ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --skip-load --workers 32 --max-differences 100000
+    ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --skip-load --workers 32 --max-differences 100000 --cache "$WORK/scan-cache"
   else
     touch "$WORK/inject.started"
     log "injecting 120 faults and verifying"
-    ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --loaded --workers 32 --max-differences 100000
+    ~/venv/bin/python bench/tpch_scale.py --sf "$SF" --loaded --workers 32 --max-differences 100000 --cache "$WORK/scan-cache"
   fi
   done_ verify
 fi

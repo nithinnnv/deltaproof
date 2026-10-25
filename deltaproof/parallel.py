@@ -131,4 +131,5 @@ def scan(url: str, specs: list[TableSpec], workers: int | None = None) -> Table:
             leader.close()
     cat = lambda i: np.concatenate([p[i] for p in parts]) if parts else np.zeros(0, np.uint64)
     khi, klo, dig = cat(0), cat(1), cat(2)
-    return Table(khi, klo, dig, np.zeros(len(klo), np.int64))
+    # amount is only used by the aggregate baseline; a broadcast view costs no memory (4.8 GB at 600M rows)
+    return Table(khi, klo, dig, np.broadcast_to(np.int64(0), (len(klo),)))

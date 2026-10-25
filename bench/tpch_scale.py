@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import resource
 import sys
 import time
@@ -26,7 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from deltaproof.parallel import scan  # noqa: E402
 from deltaproof.sketch import LadderConfig, Sketch  # noqa: E402
-from deltaproof.store import exact_diff  # noqa: E402
+from deltaproof.hashing import element_hash  # noqa: E402
+from deltaproof.store import Table, exact_diff  # noqa: E402
 from deltaproof.verify import table_rescan, verify  # noqa: E402
 from tpch_e2e import COLS, LINEITEM, PG_DDL, connect_cassandra, inject  # noqa: E402
 
@@ -115,6 +117,8 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--duckdb", default=str(Path(__file__).resolve().parents[1] / "results" / "raw" / "tpch.duckdb"))
     p.add_argument("--skip-load", action="store_true", help="reuse data already loaded (faults are not re-injected)")
+    p.add_argument("--cache", default="",
+                   help="directory to save scanned elements in, and to reuse them from on a rerun")
     p.add_argument("--loaded", action="store_true",
                    help="data was bulk-loaded by other means (infra/gcp/sf100_vm.sh); inject faults, then verify")
     args = p.parse_args()
@@ -149,12 +153,24 @@ def main() -> None:
     else:
         truth = None
 
-    t0 = time.perf_counter()
-    src = scan(pg_url(db), [LINEITEM], args.workers)
-    out["scan_postgres_s"] = round(time.perf_counter() - t0, 1)
-    t0 = time.perf_counter()
-    tgt = scan(f"cassandra://127.0.0.1:59042/{keyspace}", [LINEITEM], args.workers)
-    out["scan_cassandra_s"] = round(time.perf_counter() - t0, 1)
+    cache = Path(args.cache) if args.cache else None
+    if cache and (cache / "scan.json").exists():  # a crash after the scans does not force scanning again
+        src, tgt = load_table(cache / "source"), load_table(cache / "target")
+        out.update(json.loads((cache / "scan.json").read_text()))
+        print(f"loaded cached scans from {cache}", flush=True)
+    else:
+        t0 = time.perf_counter()
+        src = scan(pg_url(db), [LINEITEM], args.workers)
+        out["scan_postgres_s"] = round(time.perf_counter() - t0, 1)
+        t0 = time.perf_counter()
+        tgt = scan(f"cassandra://127.0.0.1:59042/{keyspace}", [LINEITEM], args.workers)
+        out["scan_cassandra_s"] = round(time.perf_counter() - t0, 1)
+        if cache:
+            cache.mkdir(parents=True, exist_ok=True)
+            save_table(cache / "source", src)
+            save_table(cache / "target", tgt)
+            (cache / "scan.json").write_text(json.dumps(
+                {k: out[k] for k in ("scan_postgres_s", "scan_cassandra_s")}))
     out["rows_source"], out["rows_target"] = len(src), len(tgt)
     print(f"scanned: {out}", flush=True)
 
@@ -168,13 +184,13 @@ def main() -> None:
     out["sketch_build_s"] = round(time.perf_counter() - t0, 1)
     out["sketch_memory_bytes_per_store"] = a.memory_bytes
     t0 = time.perf_counter()
-    rep = verify(a, b, table_rescan(src, tgt))
+    rep = verify(a, b, lazy_rescan(src, tgt))
     out["verify_s"] = round(time.perf_counter() - t0, 3)
     out.update({"found": len(rep.keys), "bytes": rep.cost.bytes, "round_trips": rep.cost.round_trips,
                 "rows_rescanned": rep.cost.rows_scanned, "level": rep.level})
 
     t0 = time.perf_counter()
-    x, y = exact_diff(src, tgt)
+    x, y = exact_diff_lowmem(src, tgt)
     scan_truth = {(h, l) for h, l, _ in x} | {(h, l) for h, l, _ in y}
     out["exact_diff_s"] = round(time.perf_counter() - t0, 1)
     out["scan_difference_keys"] = len(scan_truth)
@@ -192,6 +208,50 @@ def main() -> None:
         w.writerow(["metric", "value"])
         w.writerows(out.items())
     print(f"wrote {path_out}")
+
+
+def save_table(prefix: Path, t: Table) -> None:
+    for name in ("khi", "klo", "dig"):
+        np.save(f"{prefix}_{name}.npy", getattr(t, name))
+
+
+def load_table(prefix: Path) -> Table:
+    khi, klo, dig = (np.load(f"{prefix}_{name}.npy") for name in ("khi", "klo", "dig"))
+    return Table(khi, klo, dig, np.broadcast_to(np.int64(0), (len(klo),)))
+
+
+def lazy_rescan(src: Table, tgt: Table):
+    """table_rescan hashes every key of both tables up front; only do that if a partition fails."""
+    cache = {}
+
+    def rescan(partitions: int, p: int):
+        if "r" not in cache:
+            cache["r"] = table_rescan(src, tgt)
+        return cache["r"](partitions, p)
+
+    return rescan
+
+
+def exact_diff_lowmem(a: Table, b: Table) -> tuple[list, list]:
+    """Same result as store.exact_diff, in a few GB at 600M rows: sort each side's element hashes in place,
+    find the hashes missing from the other side by binary search, then pick out those few rows."""
+    def missing(xs: np.ndarray, ys: np.ndarray) -> np.ndarray:  # values of sorted xs not in sorted ys
+        i = np.searchsorted(ys, xs)
+        np.minimum(i, len(ys) - 1, out=i)
+        return xs[ys[i] != xs] if len(ys) else xs
+
+    ea = element_hash(a.khi, a.klo, a.dig)
+    ea.sort()
+    eb = element_hash(b.khi, b.klo, b.dig)
+    eb.sort()
+    only_a, only_b = missing(ea, eb), missing(eb, ea)
+    del ea, eb
+
+    def rows(t: Table, hashes: np.ndarray) -> list:
+        idx = np.flatnonzero(np.isin(element_hash(t.khi, t.klo, t.dig), hashes))
+        return list(zip(t.khi[idx].tolist(), t.klo[idx].tolist(), t.dig[idx].tolist()))
+
+    return rows(a, only_a), rows(b, only_b)
 
 
 def inject_into(pg, cs, keyspace: str, per: int, seed: int) -> dict:
