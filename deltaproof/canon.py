@@ -119,8 +119,14 @@ class Char(Text):
 
 @dataclass(frozen=True)
 class Float:
-    """IEEE-754 double, by its bits. -0.0 folds to 0.0 and every NaN to one NaN."""
+    """IEEE-754 double, by its bits. -0.0 folds to 0.0 and every NaN to one NaN.
 
+    bits=32 declares a single-precision column (MySQL FLOAT, PostgreSQL real): the value is rounded to
+    the nearest float32 first, so the binlog's widened double, a client's decimal text and a real column
+    all give the same element.
+    """
+
+    bits: int = 64
     tag = TAG_FLOAT
 
     def canon(self, v) -> int:
@@ -131,6 +137,8 @@ class Float:
             f = float("nan")
         elif f == 0.0:
             f = 0.0
+        elif self.bits == 32:
+            f = struct.unpack("<f", struct.pack("<f", f))[0]
         return struct.unpack("<Q", struct.pack("<d", f))[0]
 
 

@@ -47,9 +47,10 @@ from deltaproof.store import exact_diff  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 HOME = Path.home()
-ENV = dict(kv.split("=") for kv in (HOME / "cluster.env").read_text().split())
-PG_IP, KAFKA_IP = ENV["PG_IP"], ENV["KAFKA_IP"]
-CASS_IPS = [x for x in ENV["CASS_IPS"].split(",") if x]
+_env_file = HOME / "cluster.env"  # written by infra/gcp/services.sh; absent when imported elsewhere
+ENV = dict(kv.split("=") for kv in _env_file.read_text().split()) if _env_file.exists() else {}
+PG_IP, KAFKA_IP = ENV.get("PG_IP", "127.0.0.1"), ENV.get("KAFKA_IP", "127.0.0.1")
+CASS_IPS = [x for x in ENV.get("CASS_IPS", "127.0.0.1").split(",") if x]
 PG_URL = f"postgresql://postgres:deltaproof@{PG_IP}:5432/tpcc"
 CASS_URL = f"cassandra://{CASS_IPS[0]}:9042/tpcc?consistency=QUORUM"
 CONNECT = f"http://{KAFKA_IP}:8083"
@@ -199,6 +200,12 @@ def debezium_row(spec, d: dict | None) -> dict | None:
 
 
 class ClusterLive(Live):
+    # What a subclass for another source changes: its table specs, how Debezium's JSON values become
+    # the logical values those specs expect, and where Kafka is.
+    specs_by_name = TPCC_BY_NAME
+    decode = staticmethod(debezium_row)
+    bootstrap = f"{KAFKA_IP}:9092"
+
     def __init__(self, args, topic: str):
         super().__init__(args)
         self.topic = topic
@@ -218,7 +225,7 @@ class ClusterLive(Live):
     def poller(self) -> None:
         from confluent_kafka import Consumer, TopicPartition
 
-        c = Consumer({"bootstrap.servers": f"{KAFKA_IP}:9092", "group.id": self.topic, "auto.offset.reset": "earliest",
+        c = Consumer({"bootstrap.servers": self.bootstrap, "group.id": self.topic, "auto.offset.reset": "earliest",
                       "enable.auto.commit": False, "fetch.max.bytes": 64 << 20})
         c.assign([TopicPartition(self.topic, 0, 0)])
         idle = 0
@@ -232,12 +239,12 @@ class ClusterLive(Live):
                     continue
                 ev = json.loads(m.value())
                 s = ev.get("source", {})
-                spec = TPCC_BY_NAME.get(s.get("table"))
+                spec = self.specs_by_name.get(s.get("table"))
                 if spec is None:
                     self.stats.skipped_history += 1
                     continue
                 v = m.offset() + 1  # version in commit order; 0 is reserved for "no change seen"
-                old, new = debezium_row(spec, ev.get("before")), debezium_row(spec, ev.get("after"))
+                old, new = self.decode(spec, ev.get("before")), self.decode(spec, ev.get("after"))
                 if ev.get("op") in ("r", "c"):
                     old = None
                 t1 = time.perf_counter()
@@ -433,11 +440,23 @@ def run_live(args) -> None:
     rr_s.update(s_scan.khi, s_scan.klo, s_scan.dig)
     rr_t.update(t_scan.khi, t_scan.klo, t_scan.dig)
     same = lambda x, y: all(np.array_equal(p, q) for p, q in zip(x.arrays, y.arrays))
+    out.update(summarize(live, final, s_scan, t_scan, truth))
+    out.update({
+        "ladder_sketches_match_rescan": sketches_equal(live.src, rebuilt_s) and sketches_equal(live.tgt, rebuilt_t),
+        "riblt_sketches_match_rescan": same(live.src_r, rr_s) and same(live.tgt_r, rr_t),
+    })
+    drop_connector(name)
+    cluster.shutdown()
+    write(tag, out, live.verifications, live.reports, live.misses)
+
+
+def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
+    """Run metrics shared by every pipeline: faults, lag, checks, bytes, and the final answer vs. truth."""
     st = live.stats
     lag = np.array(st.lag_samples) if st.lag_samples else np.zeros(1)
     lv = [v for v in live.verifications if v["label"] == "live"]
     found, reported = set(final["candidates"]), set(final["reported"])
-    out.update({
+    return {
         "changes_captured": st.changes, "dropped": st.dropped, "corrupted": st.corrupted, "deferred": st.deferred,
         "applied_ops": st.applied_ops, "max_backlog": st.max_backlog,
         "apply_delay_p50_s": round(float(np.percentile(lag, 50)), 2),
@@ -458,18 +477,13 @@ def run_live(args) -> None:
         "live_riblt_agrees_with_ladder": all(v["riblt_candidates_equal_ladder"] for v in live.verifications),
         "final_rows_source": len(s_scan), "final_rows_target": len(t_scan), "final_truth_keys": len(truth),
         "final_reported_equals_truth": reported == truth, "final_candidates_equal_truth": found == truth,
-        "ladder_sketches_match_rescan": sketches_equal(live.src, rebuilt_s) and sketches_equal(live.tgt, rebuilt_t),
-        "riblt_sketches_match_rescan": same(live.src_r, rr_s) and same(live.tgt_r, rr_t),
-    })
-    drop_connector(name)
-    cluster.shutdown()
-    write(tag, out, live.verifications, live.reports, live.misses)
+    }
 
 
-def write(tag: str, out: dict, verifications: list, reports: list, misses: list = ()) -> None:
+def write(tag: str, out: dict, verifications: list, reports: list, misses: list = (), sub: str = "cluster") -> None:
     import csv
 
-    d = ROOT / "results" / "cluster"
+    d = ROOT / "results" / sub
     d.mkdir(parents=True, exist_ok=True)
     with (d / f"{tag}.csv").open("w", newline="") as f:
         w = csv.writer(f)

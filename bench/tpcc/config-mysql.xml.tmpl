@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- BenchBase TPC-C config for bench/live_mysql_pg.py. {placeholders} are filled per run. -->
+<parameters>
+    <type>MYSQL</type>
+    <driver>com.mysql.cj.jdbc.Driver</driver>
+    <url>jdbc:mysql://{host}/tpcc?rewriteBatchedStatements=true&amp;allowPublicKeyRetrieval=True&amp;sslMode=DISABLED&amp;connectionTimeZone=UTC</url>
+    <username>root</username>
+    <password>deltaproof</password>
+    <reconnectOnConnectionFailure>true</reconnectOnConnectionFailure>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+    <batchsize>128</batchsize>
+    <scalefactor>{warehouses}</scalefactor>
+    <terminals>{terminals}</terminals>
+    <works>
+        <work>
+            <time>{seconds}</time>
+            <rate>{rate}</rate>
+            <weights>45,43,4,4,4</weights>
+        </work>
+    </works>
+    <transactiontypes>
+        <transactiontype><name>NewOrder</name></transactiontype>
+        <transactiontype><name>Payment</name></transactiontype>
+        <transactiontype><name>OrderStatus</name></transactiontype>
+        <transactiontype><name>Delivery</name></transactiontype>
+        <transactiontype><name>StockLevel</name></transactiontype>
+    </transactiontypes>
+</parameters>

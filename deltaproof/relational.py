@@ -14,6 +14,8 @@ from . import canon
 from .canon import Char, Column, Date, Dec, Float, Int, Text, Timestamp
 
 _CQL = {Int: "int", Dec: "decimal", Float: "double", Text: "text", Char: "text", Timestamp: "timestamp", Date: "date"}
+_PG = {Int: "integer", Dec: "numeric", Float: "double precision", Text: "text", Char: "text", Timestamp: "timestamptz",
+       Date: "date"}
 
 
 @dataclass(frozen=True)
@@ -90,11 +92,21 @@ class TableSpec:
                [f"{c.name} {_CQL[type(c.type)]}" for c in self.columns]
         return f"CREATE TABLE {keyspace}.{self.name} ({', '.join(cols)}, PRIMARY KEY (({', '.join(self.key)})))"
 
+    def pg_ddl(self, extra: str = "") -> str:
+        """PostgreSQL table for this spec, as a migration target; `extra` adds columns such as a version."""
+        pg = lambda t: "real" if isinstance(t, Float) and t.bits == 32 else _PG[type(t)]
+        types = self.key_types or (Int(),) * len(self.key)
+        cols = [f"{k} {pg(t)} NOT NULL" for k, t in zip(self.key, types)] + \
+               [f"{c.name} {pg(c.type)}{'' if c.nullable else ' NOT NULL'}" for c in self.columns]
+        if extra:
+            cols.append(extra)
+        return f"CREATE TABLE {self.name} ({', '.join(cols)}, PRIMARY KEY ({', '.join(self.key)}))"
+
 
 def _cols(spec: str) -> tuple[Column, ...]:
     """Compact column list: 'name:type[?]' with types i, d2, d4, f, t, c, ts; '?' = nullable."""
-    types = {"i": Int(), "d2": Dec(2), "d4": Dec(4), "f": Float(), "t": Text(), "c": Char(), "ts": Timestamp(unit="ms"),
-             "dt": Date()}
+    types = {"i": Int(), "d2": Dec(2), "d4": Dec(4), "f": Float(), "f4": Float(bits=32), "t": Text(), "c": Char(),
+             "ts": Timestamp(unit="ms"), "dt": Date()}
     out = []
     for item in spec.split():
         name, ty = item.split(":")
@@ -125,3 +137,11 @@ TPCC = (
 )
 TPCC_BY_NAME = {t.name: t for t in TPCC}
 TPCC_BY_TAG = {t.tag: t for t in TPCC}
+
+# BenchBase TPC-C on MySQL (ddl-mysql.sql): the same tables, but c_ytd_payment is a single-precision FLOAT.
+TPCC_MYSQL = tuple(
+    TableSpec(t.name, t.tag, t.key, tuple(
+        Column(c.name, Float(bits=32), c.nullable) if c.name == "c_ytd_payment" else c for c in t.columns))
+    for t in TPCC)
+TPCC_MYSQL_BY_NAME = {t.name: t for t in TPCC_MYSQL}
+TPCC_MYSQL_BY_TAG = {t.tag: t for t in TPCC_MYSQL}
