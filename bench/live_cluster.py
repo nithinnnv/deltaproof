@@ -363,7 +363,7 @@ def restore() -> None:
 
 def run_baseline(args) -> None:
     restore()
-    tag = f"baseline_r{args.rate}"
+    tag = f"baseline_r{args.rate}" + args.suffix
     bb = benchbase(tag, args.warehouses, args.rate, args.seconds, args.terminals, "execute")
     bb.wait()
     out = {"mode": "baseline", "rate": args.rate, "seconds": args.seconds, "terminals": args.terminals,
@@ -373,7 +373,7 @@ def run_baseline(args) -> None:
 
 def run_live(args) -> None:
     restore()
-    tag = f"live_r{args.rate}_l{args.lag:g}" + (f"_o{args.reorder:g}" if args.reorder else "")
+    tag = f"live_r{args.rate}_l{args.lag:g}" + (f"_o{args.reorder:g}" if args.reorder else "") + args.suffix
     name = f"dp_{int(time.time())}"
     topic = f"{name}_changes"
     cluster, session = connect_cassandra()
@@ -501,6 +501,7 @@ def main() -> None:
     p.add_argument("--interval", type=float, default=10.0)
     p.add_argument("--symbols", type=int, default=1 << 18)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--suffix", default="", help="appended to result file names, e.g. _long")
     args = p.parse_args()
     {"load": run_load, "baseline": run_baseline, "live": run_live}[args.mode](args)
 
