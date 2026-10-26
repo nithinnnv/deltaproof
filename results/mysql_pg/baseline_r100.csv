@@ -1,0 +1,12 @@
+metric,value
+pipeline,mysql->postgresql
+mode,baseline
+rate,100
+seconds,300
+terminals,16
+warehouses,4
+tpcc_throughput_tps,100.0
+tpcc_goodput_tps,99.49
+tpcc_latency_p50_ms,5.95
+tpcc_latency_p95_ms,12.91
+tpcc_latency_p99_ms,19.93

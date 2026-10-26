@@ -1,0 +1,177 @@
+loaded 4 warehouses, 1,976,961 keyed rows in 44 s
+pipeline                               mysql->postgresql
+mode                                   baseline
+rate                                   100
+seconds                                300
+terminals                              16
+warehouses                             4
+tpcc_throughput_tps                    100.0
+tpcc_goodput_tps                       99.49
+tpcc_latency_p50_ms                    5.95
+tpcc_latency_p95_ms                    12.91
+tpcc_latency_p99_ms                    19.93
+wrote /home/macintoshhd/deltaproof/results/mysql_pg/baseline_r100.csv
+Debezium snapshot (backfill) running
+  backfill done: 1,976,961 rows in 184.0 s; reported=1949 false=0
+TPC-C running (300s)
+  t=205.8s cand=1950 reported=1950 false=0 missed=0 ladder=777600B riblt=286488B backlog=3181
+  t=216.1s cand=1956 reported=1956 false=0 missed=0 ladder=777600B riblt=286488B backlog=2041
+  t=226.5s cand=1964 reported=1964 false=0 missed=0 ladder=777600B riblt=287712B backlog=2423
+  t=237.3s cand=1967 reported=1967 false=0 missed=0 ladder=777600B riblt=286992B backlog=2889
+  t=248.3s cand=1971 reported=1971 false=0 missed=0 ladder=777600B riblt=287784B backlog=3313
+  t=258.7s cand=1968 reported=1968 false=0 missed=0 ladder=777600B riblt=285840B backlog=3488
+  t=269.3s cand=1976 reported=1976 false=0 missed=0 ladder=777600B riblt=292032B backlog=3266
+  t=280.1s cand=1980 reported=1979 false=0 missed=0 ladder=777600B riblt=289800B backlog=2534
+  t=290.8s cand=1988 reported=1988 false=0 missed=0 ladder=777600B riblt=294192B backlog=2876
+  t=301.3s cand=1996 reported=1996 false=0 missed=0 ladder=777600B riblt=294552B backlog=2204
+  t=312.2s cand=2003 reported=2003 false=0 missed=0 ladder=777600B riblt=296856B backlog=2437
+  t=323.2s cand=2003 reported=2003 false=0 missed=0 ladder=777600B riblt=297792B backlog=2152
+  t=333.6s cand=2013 reported=2013 false=0 missed=0 ladder=777600B riblt=299448B backlog=2689
+  t=344.1s cand=2017 reported=2014 false=0 missed=0 ladder=777600B riblt=300672B backlog=3556
+  t=355.1s cand=2017 reported=2017 false=0 missed=0 ladder=777600B riblt=299448B backlog=3079
+  t=365.8s cand=2014 reported=2014 false=0 missed=0 ladder=777600B riblt=300384B backlog=3139
+  t=376.2s cand=2021 reported=2021 false=0 missed=0 ladder=777600B riblt=300672B backlog=2036
+  t=386.7s cand=2029 reported=2028 false=0 missed=0 ladder=777600B riblt=298224B backlog=2196
+  t=397.3s cand=2038 reported=2038 false=0 missed=0 ladder=4914432B riblt=301392B backlog=1821
+  t=407.9s cand=2039 reported=2038 false=0 missed=0 ladder=4914432B riblt=300384B backlog=2917
+  t=418.6s cand=2040 reported=2040 false=0 missed=0 ladder=4914432B riblt=300384B backlog=3006
+  t=429.5s cand=2046 reported=2046 false=0 missed=0 ladder=777600B riblt=300456B backlog=2820
+  t=440.4s cand=2058 reported=2058 false=0 missed=0 ladder=4914432B riblt=304056B backlog=2333
+  t=451.0s cand=2071 reported=2071 false=0 missed=0 ladder=4914432B riblt=309024B backlog=2930
+  t=461.6s cand=2075 reported=2075 false=0 missed=0 ladder=4914432B riblt=309024B backlog=2222
+  t=472.7s cand=2087 reported=2087 false=0 missed=0 ladder=4914432B riblt=312984B backlog=3562
+  t=483.8s cand=2088 reported=2088 false=0 missed=0 ladder=777600B riblt=313848B backlog=2577
+  t=494.3s cand=2087 reported=2087 false=0 missed=0 ladder=777600B riblt=313848B backlog=3160
+TPC-C finished; draining the change stream
+final full scans for ground truth
+pipeline                               mysql->postgresql
+mode                                   live
+rate                                   100
+seconds                                300
+terminals                              16
+warehouses                             4
+lag_s                                  2.0
+reorder                                0.0
+drop                                   0.0005
+corrupt                                0.0005
+interval_s                             10.0
+rateless_symbols                       262144
+backfill_events                        1976961
+backfill_s                             184.0
+tpcc_throughput_tps                    100.0
+tpcc_goodput_tps                       99.55
+tpcc_latency_p50_ms                    5.66
+tpcc_latency_p95_ms                    12.58
+tpcc_latency_p99_ms                    19.57
+changes_captured                       2415763
+dropped                                1181
+corrupted                              1203
+deferred                               0
+applied_ops                            2391876
+max_backlog                            1955000
+apply_delay_p50_s                      2.01
+apply_delay_p99_s                      2.09
+source_sketches_us_per_change          32.9
+live_verifications                     28
+live_candidates_total                  56462
+live_reported_total                    56456
+live_reported_false_total              0
+live_missed_total                      0
+live_faulty_being_rewritten_total      7
+live_check_ms_median                   486.85
+live_replicator_paused_ms_median       19.6
+live_target_point_reads_total          389
+live_cached_verdicts_total             56073
+live_ladder_bytes_median               777600.0
+live_riblt_bytes_median                299448.0
+live_riblt_agrees_with_ladder          True
+final_rows_source                      2130633
+final_rows_target                      2129674
+final_truth_keys                       2085
+final_reported_equals_truth            True
+final_candidates_equal_truth           True
+ladder_sketches_match_rescan           True
+riblt_sketches_match_rescan            True
+wrote /home/macintoshhd/deltaproof/results/mysql_pg/live_r100_l2.csv
+Debezium snapshot (backfill) running
+  backfill done: 1,976,961 rows in 184.3 s; reported=1992 false=0
+TPC-C running (300s)
+  t=205.9s cand=4247 reported=1995 false=0 missed=0 ladder=4914432B riblt=615888B backlog=2466
+  t=216.6s cand=4713 reported=1998 false=0 missed=0 ladder=4914432B riblt=711864B backlog=3038
+  t=227.9s cand=3882 reported=2003 false=0 missed=0 ladder=4914432B riblt=589464B backlog=3965
+  t=239.3s cand=3810 reported=2009 false=0 missed=0 ladder=4914432B riblt=565632B backlog=3049
+  t=250.7s cand=3372 reported=2008 false=0 missed=0 ladder=4914432B riblt=499536B backlog=2154
+  t=262.2s cand=4571 reported=2022 false=0 missed=0 ladder=4914432B riblt=704376B backlog=2507
+  t=273.7s cand=4646 reported=2025 false=0 missed=0 ladder=4914432B riblt=694152B backlog=3916
+  t=285.2s cand=4507 reported=2034 false=0 missed=0 ladder=4914432B riblt=693720B backlog=3080
+  t=296.3s cand=3760 reported=2043 false=0 missed=0 ladder=4914432B riblt=554472B backlog=3295
+  t=307.3s cand=3829 reported=2051 false=0 missed=0 ladder=4914432B riblt=589032B backlog=3187
+  t=318.1s cand=4127 reported=2058 false=0 missed=0 ladder=4914432B riblt=624096B backlog=3138
+  t=328.9s cand=3490 reported=2064 false=0 missed=0 ladder=4914432B riblt=520128B backlog=3516
+  t=340.0s cand=3868 reported=2073 false=0 missed=0 ladder=4914432B riblt=595368B backlog=2392
+  t=351.4s cand=4478 reported=2085 false=0 missed=0 ladder=4914432B riblt=675072B backlog=2721
+  t=362.8s cand=3427 reported=2087 false=0 missed=0 ladder=4914432B riblt=506808B backlog=3220
+  t=374.3s cand=3370 reported=2091 false=0 missed=0 ladder=4914432B riblt=509688B backlog=3346
+  t=385.7s cand=4071 reported=2095 false=0 missed=0 ladder=4914432B riblt=617832B backlog=3423
+  t=396.6s cand=3927 reported=2099 false=0 missed=0 ladder=4914432B riblt=589752B backlog=3094
+  t=408.0s cand=4414 reported=2104 false=0 missed=0 ladder=4914432B riblt=658512B backlog=3062
+  t=418.8s cand=4399 reported=2111 false=0 missed=0 ladder=4914432B riblt=670392B backlog=2448
+  t=429.6s cand=3469 reported=2123 false=0 missed=0 ladder=4914432B riblt=517896B backlog=2982
+  t=441.2s cand=4025 reported=2128 false=0 missed=0 ladder=4914432B riblt=600264B backlog=3446
+  t=452.2s cand=4052 reported=2129 false=0 missed=0 ladder=4914432B riblt=612576B backlog=2973
+  t=463.8s cand=3941 reported=2141 false=0 missed=0 ladder=4914432B riblt=593784B backlog=3007
+  t=475.3s cand=4604 reported=2146 false=0 missed=0 ladder=4914432B riblt=704664B backlog=3257
+  t=486.1s cand=3811 reported=2150 false=0 missed=0 ladder=4914432B riblt=572256B backlog=2823
+  t=497.4s cand=3652 reported=2154 false=0 missed=0 ladder=4914432B riblt=563184B backlog=2647
+TPC-C finished; draining the change stream
+final full scans for ground truth
+pipeline                               mysql->postgresql
+mode                                   live
+rate                                   100
+seconds                                300
+terminals                              16
+warehouses                             4
+lag_s                                  2.0
+reorder                                0.05
+drop                                   0.0005
+corrupt                                0.0005
+interval_s                             10.0
+rateless_symbols                       262144
+backfill_events                        1976961
+backfill_s                             184.3
+tpcc_throughput_tps                    100.0
+tpcc_goodput_tps                       99.53
+tpcc_latency_p50_ms                    5.72
+tpcc_latency_p95_ms                    12.73
+tpcc_latency_p99_ms                    19.68
+changes_captured                       2414151
+dropped                                1226
+corrupted                              1202
+deferred                               119958
+applied_ops                            2389305
+max_backlog                            1959194
+apply_delay_p50_s                      2.01
+apply_delay_p99_s                      3.37
+source_sketches_us_per_change          33.9
+live_verifications                     27
+live_candidates_total                  108462
+live_reported_total                    56026
+live_reported_false_total              0
+live_missed_total                      0
+live_faulty_being_rewritten_total      2
+live_check_ms_median                   1178.9
+live_replicator_paused_ms_median       134.6
+live_target_point_reads_total          52818
+live_cached_verdicts_total             55644
+live_ladder_bytes_median               4914432.0
+live_riblt_bytes_median                595368.0
+live_riblt_agrees_with_ladder          True
+final_rows_source                      2130879
+final_rows_target                      2129877
+final_truth_keys                       2157
+final_reported_equals_truth            True
+final_candidates_equal_truth           True
+ladder_sketches_match_rescan           True
+riblt_sketches_match_rescan            True
+wrote /home/macintoshhd/deltaproof/results/mysql_pg/live_r100_l2_o0.05.csv
+SERIES DONE
