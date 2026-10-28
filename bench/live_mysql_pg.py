@@ -69,7 +69,9 @@ def connect_mysql(db: str | None = "tpcc"):
     import pymysql
 
     return pymysql.connect(host=MYSQL_HOST, port=MYSQL_PORT, user="root", password="deltaproof", database=db,
-                           autocommit=True, init_command="SET time_zone = '+00:00'")
+                           autocommit=True,
+                           # streaming scans read slowly; MySQL drops a client after net_write_timeout (60 s)
+                           init_command="SET time_zone = '+00:00', net_write_timeout = 3600, net_read_timeout = 3600")
 
 
 def benchbase(tag: str, warehouses: int, rate, seconds: int, terminals: int, phase: str) -> subprocess.Popen:
@@ -283,6 +285,7 @@ class MySQLPGLive(ClusterLive):
         if absent:
             for key, v in target.tombstones(absent).items():
                 state[key] = (v, None)
+        self.read_states.update(state)
         return [key for key in keys if state[key] not in self.valid_states(key)]
 
     def full_rescan(self, pg, target):
@@ -377,7 +380,8 @@ def run_live(args) -> None:
     out["riblt_sketches_match_rescan"] = same(live.src_r, rr_s) and same(live.tgt_r, rr_t)
     drop_connector(name)
     target.close()
-    live_cluster.write(tag, out, live.verifications, live.reports, live.misses, sub="mysql_pg")
+    live_cluster.write(tag, out, live.verifications, live.reports, live.misses, sub="mysql_pg",
+                       followups=live.followups)
 
 
 def main() -> None:

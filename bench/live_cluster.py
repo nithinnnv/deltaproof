@@ -321,6 +321,7 @@ class ClusterLive(Live):
                 row = dict(zip(spec.column_names + ["src_v"], r))
                 v_t = row.pop("src_v")
                 state = (v_t, spec.element(row)[2])
+            self.read_states[key] = state
             if state not in self.valid_states(key):
                 reported.append(key)
         return reported
@@ -447,7 +448,7 @@ def run_live(args) -> None:
     })
     drop_connector(name)
     cluster.shutdown()
-    write(tag, out, live.verifications, live.reports, live.misses)
+    write(tag, out, live.verifications, live.reports, live.misses, followups=live.followups)
 
 
 def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
@@ -466,8 +467,10 @@ def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
         "live_candidates_total": sum(v["candidates"] for v in lv),
         "live_reported_total": sum(v["reported"] for v in lv),
         "live_reported_false_total": sum(v["reported_false"] for v in lv),
+        "live_reported_while_rewritten_total": sum(v.get("reported_while_rewritten", 0) for v in lv),
         "live_missed_total": sum(v["missed"] for v in lv),
         "live_faulty_being_rewritten_total": sum(v["faulty_being_rewritten"] for v in lv),
+        "live_faulty_content_agrees_max": max((v.get("faulty_content_agrees", 0) for v in lv), default=0),
         "live_check_ms_median": float(np.median([v["total_ms"] for v in lv])) if lv else None,
         "live_replicator_paused_ms_median": float(np.median([v["replicator_paused_ms"] for v in lv])) if lv else None,
         "live_target_point_reads_total": sum(v["target_point_reads"] for v in lv),
@@ -480,7 +483,8 @@ def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
     }
 
 
-def write(tag: str, out: dict, verifications: list, reports: list, misses: list = (), sub: str = "cluster") -> None:
+def write(tag: str, out: dict, verifications: list, reports: list, misses: list = (), sub: str = "cluster",
+          followups: list = ()) -> None:
     import csv
 
     d = ROOT / "results" / sub
@@ -489,7 +493,8 @@ def write(tag: str, out: dict, verifications: list, reports: list, misses: list 
         w = csv.writer(f)
         w.writerow(["metric", "value"])
         w.writerows(out.items())
-    for name, rows in (("verifications", verifications), ("false_reports", reports), ("missed", list(misses))):
+    for name, rows in (("verifications", verifications), ("unexplained_reports", reports), ("missed", list(misses)),
+                       ("report_followups", list(followups))):
         if rows:
             keys = list(dict.fromkeys(k for r in rows for k in r))
             with (d / f"{tag}_{name}.csv").open("w", newline="") as f:

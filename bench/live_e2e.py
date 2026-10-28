@@ -262,6 +262,11 @@ class Live:
         self.stats = Stats()
         self.verifications: list[dict] = []
         self.reports: list[dict] = []
+        # Audit trail for reports that the replicator's recorded status does not explain: the state the check
+        # read, and every later change the replicator processed for those keys.
+        self.read_states: dict[Key, tuple] = {}  # key -> (version, digest) last read from the target
+        self.watch: set = set()
+        self.followups: list[dict] = []
 
     # -- setup
 
@@ -447,6 +452,9 @@ class Live:
                     self.tgt_update(u([k[0] for k in new_k]), u([k[1] for k in new_k]), u(new_d), +1)
                 self.in_flight.difference_update(batch_keys)
                 for key, st, lsn in status:
+                    if key in self.watch:
+                        self.followups.append({"t": round(time.monotonic() - self.t_start, 1), "key": key,
+                                               "status": st, "version": lsn})
                     self.last_status[key] = (st, lsn)
                     if st in FAULTY:  # small map of currently faulty keys, cheap to copy at checks
                         self.faulty[key] = (st, lsn)
@@ -520,10 +528,12 @@ class Live:
             r = res.one()
             valid = self.valid_states(key)
             if r is None:
+                self.read_states[key] = (None, None)
                 bad = not any(d is None for _, d in valid)
             else:
                 row = dict(zip(spec.column_names + ["src_v"], r))
                 v_t = row.pop("src_v")
+                self.read_states[key] = (v_t, spec.element(row)[2])
                 bad = (v_t, spec.element(row)[2]) not in valid
             if bad:
                 reported.append(key)
@@ -563,30 +573,45 @@ class Live:
             self.reported_cache = {k: version(k) for k in reported}
             faulty = dict(self.faulty)
             status = {k: self.last_status.get(k) for k in reported}
+            # A fault can leave the content agreeing at w, e.g. a dropped delete of a row whose insert was dropped
+            # too: both stores lack the row, so there is no divergence to report. For a faulty key whose last
+            # change is at or below w and not being written, last_t is the target's content at w.
+            with self.slock:
+                agree = {k for k, (st, lsn) in faulty.items() if lsn <= w and k not in writing
+                         and self.last_t.get(k) == self.src_base.get(k, (0, None))[1]}
         lock_ms += (time.perf_counter() - t1) * 1000
         # Ground truth at the instant of confirmation. A key whose new change is being written right now has
         # a status about to change (its row may already hold a newer, valid state), so it is left out and counted.
-        truth_all = {k for k, (st, lsn) in faulty.items() if lsn <= w}
+        truth_all = {k for k, (st, lsn) in faulty.items() if lsn <= w} - agree
         truth_now = truth_all - writing
         rep_set = set(reported)
         for k in sorted(truth_now - rep_set):  # every miss is logged with its context, for audit
             self.misses.append({"t": round(time.monotonic() - self.t_start, 1), "key": k, "watermark": w,
                                 "status": faulty.get(k), "last_status": self.last_status.get(k),
                                 "candidate": k in set(cands), "valid_states": self.valid_states(k)})
-        false_rep = [k for k in reported if (status.get(k) or ("ok", 0))[0] not in FAULTY]
+        # A report whose key's recorded status is not a fault is false, unless the key was being written when the
+        # check read it: its status is recorded only after the write, so the row read may come from a newer change
+        # (possibly itself a fault). Those are counted apart, as misses are, and resolved from the follow-up log.
+        unexplained = [k for k in reported if (status.get(k) or ("ok", 0))[0] not in FAULTY]
+        false_rep = [k for k in unexplained if k not in writing]
+        rewritten_rep = [k for k in unexplained if k in writing]
         rec = {"label": label, "t": round(time.monotonic() - self.t_start, 1), "watermark": w,
                "estimate": rep.estimate, "level": rep.level, "bytes": rep.cost.bytes,
                "round_trips": rep.cost.round_trips, "rows_rescanned": rep.cost.rows_scanned,
                "failed_partitions": rep.failed_partitions, "candidates": len(cands),
                "reported": len(reported), "reported_false": len(false_rep),
+               "reported_while_rewritten": len(rewritten_rep),
                "faulty_at_or_below_w": len(truth_now), "missed": len(truth_now - rep_set),
-               "faulty_being_rewritten": len(truth_all & writing),
+               "faulty_being_rewritten": len(truth_all & writing), "faulty_content_agrees": len(agree),
                "target_point_reads": len(fresh), "cached_verdicts": len(cached),
                "sketch_ms": round(t_sketch * 1000, 1), "replicator_paused_ms": round(lock_ms, 1),
                "total_ms": round((time.perf_counter() - t0) * 1000, 1), **extra}
         self.verifications.append(rec)
-        for k in false_rep:
-            self.reports.append({"t": rec["t"], "key": k, "status": status.get(k)})
+        for k in unexplained:
+            self.reports.append({"t": rec["t"], "key": k, "watermark": w, "status": status.get(k),
+                                 "being_written": k in writing, "cached_verdict": k in cached_set,
+                                 "target_state_read": self.read_states.get(k), "valid_states": self.valid_states(k)})
+            self.watch.add(k)
         return {"rec": rec, "candidates": cands, "reported": reported}
 
     def full_rescan(self, pg, target: Target):
@@ -704,7 +729,7 @@ def write_results(tag: str, out: dict, verifications: list, reports: list, misse
         w = csv.writer(f)
         w.writerow(["metric", "value"])
         w.writerows(out.items())
-    for name, rows in (("verifications", verifications), ("false_reports", reports), ("missed", list(misses))):
+    for name, rows in (("verifications", verifications), ("unexplained_reports", reports), ("missed", list(misses))):
         if rows:
             with (d / f"{tag}_{name}.csv").open("w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=list(rows[0]))
