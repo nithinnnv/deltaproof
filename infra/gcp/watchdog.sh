@@ -32,6 +32,14 @@ while :; do
   fi
   sleep 120
 done
-collect || log "WARNING: could not copy results"
+collect_bucket() {  # the VM uploaded its results at the end of the series, even if it is gone now
+  bucket=$(gcloud config get-value project 2>/dev/null)-deltaproof-results
+  latest=$(gcloud storage ls "gs://$bucket/dp-app-*-cluster.tgz" 2>/dev/null | sort | tail -1)
+  [ -n "$latest" ] && mkdir -p "$OUT" && gcloud storage cp "$latest" "$OUT/cluster-results.tgz" >/dev/null 2>&1 &&
+  tar -C "$HERE/results" -xzf "$OUT/cluster-results.tgz" && rm -f "$OUT/cluster-results.tgz" &&
+  log "results copied from $latest: $(ls "$OUT" | tr '\n' ' ')"
+}
+
+collect || collect_bucket || log "WARNING: could not copy results"
 "$HERE/infra/gcp/cluster.sh" down
 log "watchdog finished"

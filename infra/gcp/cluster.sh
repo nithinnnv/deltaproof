@@ -16,6 +16,9 @@ KAFKA_TYPE=${KAFKA_TYPE:-n2-standard-4}
 APP_TYPE=${APP_TYPE:-n2-standard-8}
 CASS_NODES=${CASS_NODES:-3}
 LABEL=deltaproof=cluster
+# Results bucket: VMs upload their results here when a series ends (infra/gcp/upload_results.sh), so they
+# survive the VMs deleting themselves even if the workstation that collects them is asleep.
+BUCKET=${BUCKET:-$(gcloud config get-value project 2>/dev/null)-deltaproof-results}
 STARTUP='#!/bin/sh
 set -e
 if ! command -v docker >/dev/null; then
@@ -33,6 +36,8 @@ vms() {
 }
 
 up() {
+  gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 ||
+    gcloud storage buckets create "gs://$BUCKET" --location us-central1 --uniform-bucket-level-access >/dev/null
   # Regular VMs delete themselves after MAX_RUN (default 8h) even if nobody runs `down`; Google does
   # not allow adding this to a running VM. Spot VMs stop instead when reclaimed, so batch jobs resume.
   spot="--max-run-duration=${MAX_RUN:-8h} --instance-termination-action=DELETE"
@@ -46,7 +51,8 @@ up() {
     gcloud compute instances create "$name" --zone "$ZONE" --machine-type "$type" $spot \
       --image-family debian-12 --image-project debian-cloud \
       --boot-disk-size "${disk}GB" --boot-disk-type pd-ssd \
-      --labels "$LABEL" --metadata startup-script="$STARTUP" --format "value(name)" &
+      --labels "$LABEL" --scopes default,storage-rw \
+      --metadata startup-script="$STARTUP",results-bucket="$BUCKET" --format "value(name)" &
   done
   wait
   for spec in $(vms); do

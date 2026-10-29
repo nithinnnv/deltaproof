@@ -11,6 +11,7 @@
 set -eu
 ZONE=${ZONE:-us-central1-a}
 LABEL=deltaproof=mysqlpg
+BUCKET=${BUCKET:-$(gcloud config get-value project 2>/dev/null)-deltaproof-results}
 EXT=${DELTAPROOF_EXT:-$HOME/workspace/deltaproof-ext}
 REPO=${REPO:-https://github.com/nithinnnv/deltaproof}
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
@@ -26,13 +27,16 @@ ip() { gcloud compute instances describe "$1" --zone "$ZONE" --format "value(net
 on() { name=$1; shift; gcloud compute ssh "$name" --zone "$ZONE" --quiet --command "$*"; }
 
 up() {
+  gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 ||
+    gcloud storage buckets create "gs://$BUCKET" --location us-central1 --uniform-bucket-level-access >/dev/null
   for spec in dpm-mysql:n2-standard-8:200 dpm-app:n2-standard-16:200; do
     name=${spec%%:*}; rest=${spec#*:}; type=${rest%%:*}; disk=${rest#*:}
     gcloud compute instances describe "$name" --zone "$ZONE" >/dev/null 2>&1 && { echo "$name exists"; continue; }
     gcloud compute instances create "$name" --zone "$ZONE" --machine-type "$type" \
       --max-run-duration="${MAX_RUN:-4h}" --instance-termination-action=DELETE \
       --image-family debian-12 --image-project debian-cloud --boot-disk-size "${disk}GB" --boot-disk-type pd-ssd \
-      --labels "$LABEL" --metadata startup-script="$STARTUP" --format "value(name)" &
+      --labels "$LABEL" --scopes default,storage-rw \
+      --metadata startup-script="$STARTUP",results-bucket="$BUCKET" --format "value(name)" &
   done
   wait
   for name in dpm-mysql dpm-app; do
@@ -86,6 +90,7 @@ W='--warehouses 4 --terminals 16'
 \$PY bench/live_mysql_pg.py baseline --rate 100 --seconds 300 \$W
 \$PY bench/live_mysql_pg.py live --rate 100 --lag 2 --seconds 300 \$W
 \$PY bench/live_mysql_pg.py live --rate 100 --lag 2 --reorder 0.05 --seconds 300 \$W
+sh ~/deltaproof/infra/gcp/upload_results.sh mysql_pg ~/series.log
 echo SERIES DONE
 EOF
 chmod +x ~/run_series.sh; setsid nohup ~/run_series.sh > ~/series.log 2>&1 < /dev/null & echo launched"
