@@ -29,6 +29,10 @@ on() { name=$1; shift; gcloud compute ssh "$name" --zone "$ZONE" --quiet --comma
 up() {
   gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 ||
     gcloud storage buckets create "gs://$BUCKET" --location us-central1 --uniform-bucket-level-access >/dev/null
+  # The VMs' default service account may create objects in this bucket only (newer projects grant it no roles).
+  sa=$(gcloud iam service-accounts list --filter "email~compute@developer" --format "value(email)" | head -1)
+  gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$sa" \
+    --role roles/storage.objectCreator >/dev/null
   for spec in dpm-mysql:n2-standard-8:200 dpm-app:n2-standard-16:200; do
     name=${spec%%:*}; rest=${spec#*:}; type=${rest%%:*}; disk=${rest#*:}
     gcloud compute instances describe "$name" --zone "$ZONE" >/dev/null 2>&1 && { echo "$name exists"; continue; }

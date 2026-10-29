@@ -38,6 +38,10 @@ vms() {
 up() {
   gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 ||
     gcloud storage buckets create "gs://$BUCKET" --location us-central1 --uniform-bucket-level-access >/dev/null
+  # The VMs' default service account may create objects in this bucket only (newer projects grant it no roles).
+  sa=$(gcloud iam service-accounts list --filter "email~compute@developer" --format "value(email)" | head -1)
+  gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$sa" \
+    --role roles/storage.objectCreator >/dev/null
   # Regular VMs delete themselves after MAX_RUN (default 8h) even if nobody runs `down`; Google does
   # not allow adding this to a running VM. Spot VMs stop instead when reclaimed, so batch jobs resume.
   spot="--max-run-duration=${MAX_RUN:-8h} --instance-termination-action=DELETE"
