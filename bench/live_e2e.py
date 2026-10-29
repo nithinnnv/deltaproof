@@ -267,6 +267,7 @@ class Live:
         self.read_states: dict[Key, tuple] = {}  # key -> (version, digest) last read from the target
         self.watch: set = set()
         self.followups: list[dict] = []
+        self.n_live = 0  # live checks so far, for --ladder-every
 
     # -- setup
 
@@ -557,10 +558,19 @@ class Live:
         lock_ms = (time.perf_counter() - t0) * 1000
         # Only the verifier changes the source sketch, so it advances to w without pausing the replicator.
         self.advance_source(w)
-        rep = verify(self.src, tgt, self.full_rescan(pg, target))
+        # Candidates come from the primary sketch a subclass provides (rateless), with the ladder decoded only
+        # every --ladder-every live checks as the comparison baseline, and whenever the primary cannot decode.
+        # Both are maintained on every change, so either one decoded at w gives the same keys.
+        self.n_live += label == "live"
+        every = getattr(self.a, "ladder_every", 1)
+        use_ladder = label != "live" or every <= 1 or self.n_live % every == 0
+        rep = verify(self.src, tgt, self.full_rescan(pg, target)) if use_ladder else None
+        extra = self.compare_extra(extra_state, set(rep.keys) if rep else None)  # same frozen instant
+        primary = extra.pop("riblt_keys", None)
+        if rep is None and primary is None:  # no primary sketch, or it could not decode: use the ladder
+            rep = verify(self.src, tgt, self.full_rescan(pg, target))
         t_sketch = time.perf_counter() - t0
-        cands = sorted(rep.keys)
-        extra = self.compare_extra(extra_state, set(cands))  # other sketches, same frozen instant
+        cands = sorted(rep.keys if rep else primary)
         t1 = time.perf_counter()
         with self.tlock:  # phase 2: confirm, re-reading only keys that may have changed
             version = lambda k: self.last_status[k][1] if k in self.last_status else None
@@ -596,9 +606,11 @@ class Live:
         false_rep = [k for k in unexplained if k not in writing]
         rewritten_rep = [k for k in unexplained if k in writing]
         rec = {"label": label, "t": round(time.monotonic() - self.t_start, 1), "watermark": w,
-               "estimate": rep.estimate, "level": rep.level, "bytes": rep.cost.bytes,
-               "round_trips": rep.cost.round_trips, "rows_rescanned": rep.cost.rows_scanned,
-               "failed_partitions": rep.failed_partitions, "candidates": len(cands),
+               "ladder_decoded": rep is not None,
+               "estimate": rep.estimate if rep else None, "level": rep.level if rep else None,
+               "bytes": rep.cost.bytes if rep else None, "round_trips": rep.cost.round_trips if rep else None,
+               "rows_rescanned": rep.cost.rows_scanned if rep else 0,
+               "failed_partitions": rep.failed_partitions if rep else 0, "candidates": len(cands),
                "reported": len(reported), "reported_false": len(false_rep),
                "reported_while_rewritten": len(rewritten_rep),
                "faulty_at_or_below_w": len(truth_now), "missed": len(truth_now - rep_set),

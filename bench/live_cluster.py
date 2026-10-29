@@ -288,10 +288,15 @@ class ClusterLive(Live):
     def compare_extra(self, state, candidates: set) -> dict:
         # Called after the source has been advanced to the same watermark; only the verifier changes it.
         t0 = time.perf_counter()
-        r = self.src_r.compare(state)
+        try:
+            r = self.src_r.compare(state)
+        except RuntimeError:  # more differences than the symbols decode: the check falls back to the ladder
+            return {"riblt_bytes": None, "riblt_symbols": None, "riblt_decode_ms": None,
+                    "riblt_candidates_equal_ladder": None}
         return {"riblt_bytes": r.bytes, "riblt_symbols": r.cells,
                 "riblt_decode_ms": round((time.perf_counter() - t0) * 1000, 1),
-                "riblt_candidates_equal_ladder": r.keys == candidates}
+                "riblt_candidates_equal_ladder": (r.keys == candidates) if candidates is not None else None,
+                "riblt_keys": r.keys}
 
     def confirm_many(self, target, keys: list) -> list:
         """Version-aware confirmation with versioned deletes: an absent row is (tombstone version, absent),
@@ -451,6 +456,11 @@ def run_live(args) -> None:
     write(tag, out, live.verifications, live.reports, live.misses, followups=live.followups)
 
 
+def _median(xs: list):
+    xs = [x for x in xs if x is not None]
+    return float(np.median(xs)) if xs else None
+
+
 def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
     """Run metrics shared by every pipeline: faults, lag, checks, bytes, and the final answer vs. truth."""
     st = live.stats
@@ -475,9 +485,11 @@ def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
         "live_replicator_paused_ms_median": float(np.median([v["replicator_paused_ms"] for v in lv])) if lv else None,
         "live_target_point_reads_total": sum(v["target_point_reads"] for v in lv),
         "live_cached_verdicts_total": sum(v["cached_verdicts"] for v in lv),
-        "live_ladder_bytes_median": float(np.median([v["bytes"] for v in lv])) if lv else None,
-        "live_riblt_bytes_median": float(np.median([v["riblt_bytes"] for v in lv])) if lv else None,
-        "live_riblt_agrees_with_ladder": all(v["riblt_candidates_equal_ladder"] for v in live.verifications),
+        "live_ladder_checks": sum(1 for v in lv if v.get("ladder_decoded", True)),
+        "live_ladder_bytes_median": _median([v["bytes"] for v in lv]),
+        "live_riblt_bytes_median": _median([v["riblt_bytes"] for v in lv]),
+        "live_riblt_agrees_with_ladder": all(v["riblt_candidates_equal_ladder"] is not False for v in live.verifications),
+        "live_riblt_agreement_checks": sum(1 for v in live.verifications if v["riblt_candidates_equal_ladder"] is not None),
         "final_rows_source": len(s_scan), "final_rows_target": len(t_scan), "final_truth_keys": len(truth),
         "final_reported_equals_truth": reported == truth, "final_candidates_equal_truth": found == truth,
     }
@@ -521,6 +533,8 @@ def main() -> None:
     p.add_argument("--symbols", type=int, default=1 << 18)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--suffix", default="", help="appended to result file names, e.g. _long")
+    p.add_argument("--ladder-every", type=int, default=1,
+                   help="decode the ladder baseline every N live checks; others use the rateless sketch")
     args = p.parse_args()
     {"load": run_load, "baseline": run_baseline, "live": run_live}[args.mode](args)
 

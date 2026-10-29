@@ -399,6 +399,7 @@ def main() -> None:
     p.add_argument("--symbols", type=int, default=1 << 18)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--suffix", default="")
+    p.add_argument("--ladder-every", type=int, default=1)
     args = p.parse_args()
     {"load": run_load, "baseline": run_baseline, "live": run_live}[args.mode](args)
 
