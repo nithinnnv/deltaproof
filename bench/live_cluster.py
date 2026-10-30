@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import heapq
 import json
 import subprocess
 import sys
@@ -268,6 +269,7 @@ class ClusterLive(Live):
                 self.src_pending.extend(src)
                 for key, v, d in hist:
                     self.src_later.setdefault(key, []).append((v, d))
+                    heapq.heappush(self.src_due, (v, key))
             with self.qlock:
                 self.queue.extend(batch)
                 self.stats.max_backlog = max(self.stats.max_backlog, len(self.queue) + len(self.deferred))

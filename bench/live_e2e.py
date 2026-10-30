@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import heapq
 import csv
 import json
 import os
@@ -243,6 +244,9 @@ class Live:
         # Source states per key for confirmation: the state at the watermark, plus later changes.
         self.src_base: dict[Key, tuple[int, int | None]] = {}
         self.src_later: dict[Key, list] = {}
+        # (version, key) of every entry in src_later, smallest version first, so advancing to w touches only the
+        # changes at or below w; scanning all of src_later made each check cost grow with the replicator's backlog.
+        self.src_due: list = []
         # What the replicator did to each key's last processed change: (status, lsn). Ground truth.
         self.last_status: dict[Key, tuple[str, int]] = {}
         self.faulty: dict[Key, tuple[str, int]] = {}  # keys whose last processed change was faulty
@@ -340,6 +344,7 @@ class Live:
                 self.src_pending.extend(src)
                 for key, lsn, d in hist:
                     self.src_later.setdefault(key, []).append((lsn, d))
+                    heapq.heappush(self.src_due, (lsn, key))
             with self.qlock:
                 self.queue.extend(batch)
                 self.stats.max_backlog = max(self.stats.max_backlog, len(self.queue) + len(self.deferred))
@@ -472,8 +477,13 @@ class Live:
         with self.slock:
             while self.src_pending and self.src_pending[0][0] <= w:
                 take.append(self.src_pending.popleft())
-            for key in list(self.src_later):
-                hist = self.src_later[key]
+            keys = set()
+            while self.src_due and self.src_due[0][0] <= w:
+                keys.add(heapq.heappop(self.src_due)[1])
+            for key in keys:
+                hist = self.src_later.get(key)
+                if not hist:
+                    continue
                 i = 0
                 while i < len(hist) and hist[i][0] <= w:
                     i += 1

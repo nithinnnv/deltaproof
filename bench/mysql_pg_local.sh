@@ -7,7 +7,7 @@ NET=dpm
 case "${1:-up}" in
 up)
   docker network inspect $NET >/dev/null 2>&1 || docker network create $NET >/dev/null
-  docker rm -f dpm-mysql dpm-pgt dpm-kafka dpm-connect >/dev/null 2>&1 || true
+  docker rm -f -v dpm-mysql dpm-pgt dpm-kafka dpm-connect >/dev/null 2>&1 || true  # -v: also their data volumes
   docker run -d --name dpm-mysql --network $NET -p 13306:3306 -e MYSQL_ROOT_PASSWORD=deltaproof -e TZ=UTC \
     mysql:8.0.39 --server-id=1 --log-bin=mysql-bin --binlog-format=ROW --binlog-row-image=FULL \
     --default-time-zone=+00:00 --max-connections=300 >/dev/null
@@ -35,7 +35,7 @@ up)
        "CONNECT=http://127.0.0.1:18083 BB_NET=$NET BB_DIR=\$HOME/workspace/deltaproof-ext/benchbase-mysql"
   ;;
 down)
-  docker rm -f dpm-mysql dpm-pgt dpm-kafka dpm-connect >/dev/null 2>&1 || true
+  docker rm -f -v dpm-mysql dpm-pgt dpm-kafka dpm-connect >/dev/null 2>&1 || true  # -v: also their data volumes
   docker network rm $NET >/dev/null 2>&1 || true
   ;;
 esac
