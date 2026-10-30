@@ -561,30 +561,33 @@ class Live:
         fault repaired by a later change before the read is no longer a divergence and is not
         counted as missed."""
         t0 = time.perf_counter()
-        with self.tlock:  # phase 1: the watermark and a copy of what the replicator modifies (target side)
-            w = self.w_t
-            tgt = copy.deepcopy(self.tgt)
-            extra_state = self.snapshot_extra()
-        lock_ms = (time.perf_counter() - t0) * 1000
-        # Only the verifier changes the source sketch, so it advances to w without pausing the replicator.
-        self.advance_source(w)
         # Candidates come from the primary sketch a subclass provides (rateless), with the ladder decoded only
         # every --ladder-every live checks as the comparison baseline, and whenever the primary cannot decode.
         # Both are maintained on every change, so either one decoded at w gives the same keys.
         self.n_live += label == "live"
         every = getattr(self.a, "ladder_every", 1)
         use_ladder = label != "live" or every <= 1 or self.n_live % every == 0
+        # phase 1: the watermark and a copy of what the replicator modifies (target side)
+        w, tgt, extra_state, lock_ms = self._phase1(use_ladder)
+        # Only the verifier changes the source sketch, so it advances to w without pausing the replicator.
+        self.advance_source(w)
         rep = verify(self.src, tgt, self.full_rescan(pg, target)) if use_ladder else None
         extra = self.compare_extra(extra_state, set(rep.keys) if rep else None)  # same frozen instant
         primary = extra.pop("riblt_keys", None)
         if rep is None and primary is None:  # no primary sketch, or it could not decode: use the ladder
+            if tgt is None:  # (split processes) the ladder was not copied: freeze again, at a new watermark
+                w, tgt, extra_state, more_ms = self._phase1(True)
+                lock_ms += more_ms
+                self.advance_source(w)
             rep = verify(self.src, tgt, self.full_rescan(pg, target))
         t_sketch = time.perf_counter() - t0
         cands = sorted(rep.keys if rep else primary)
         t1 = time.perf_counter()
-        with self.tlock:  # phase 2: confirm, re-reading only keys that may have changed
-            version = lambda k: self.last_status[k][1] if k in self.last_status else None
-            writing = set(self.in_flight)
+        reported, status = [], {}
+        frozen = self._freeze(cands)  # phase 2: confirm, re-reading only keys that may have changed
+        try:
+            version = lambda k: frozen["version"].get(k)
+            writing = frozen["writing"]
             # The cache is sound because a version names one state exactly; without delete versions (the
             # --no-tombstones ablation) an absent row cannot be matched to a delete, so every candidate is re-read.
             reuse = not getattr(self.a, "no_tombstones", False)
@@ -594,14 +597,16 @@ class Live:
             fresh = [k for k in cands if k not in cached_set]
             reported = cached + (self.confirm_many(target, fresh) if fresh else [])
             self.reported_cache = {k: version(k) for k in reported}
-            faulty = dict(self.faulty)
-            status = {k: self.last_status.get(k) for k in reported}
+            state = self._truth_state(reported)
+            faulty, status, held = state["faulty"], state["status"], state["last_t"]
             # A fault can leave the content agreeing at w, e.g. a dropped delete of a row whose insert was dropped
             # too: both stores lack the row, so there is no divergence to report. For a faulty key whose last
             # change is at or below w and not being written, last_t is the target's content at w.
             with self.slock:
                 agree = {k for k, (st, lsn) in faulty.items() if lsn <= w and k not in writing
-                         and self.last_t.get(k) == self.src_base.get(k, (0, None))[1]}
+                         and held.get(k) == self.src_base.get(k, (0, None))[1]}
+        finally:  # keys whose report the recorded status does not explain are watched from here on
+            self._release([k for k in reported if (status.get(k) or ("ok", 0))[0] not in FAULTY])
         lock_ms += (time.perf_counter() - t1) * 1000
         # Ground truth at the instant of confirmation. A key whose new change is being written right now has
         # a status about to change (its row may already hold a newer, valid state), so it is left out and counted.
@@ -610,7 +615,7 @@ class Live:
         rep_set = set(reported)
         for k in sorted(truth_now - rep_set):  # every miss is logged with its context, for audit
             self.misses.append({"t": round(time.monotonic() - self.t_start, 1), "key": k, "watermark": w,
-                                "status": faulty.get(k), "last_status": self.last_status.get(k),
+                                "status": faulty.get(k), "last_status": faulty.get(k),
                                 "candidate": k in set(cands), "valid_states": self.valid_states(k)})
         # A report whose key's recorded status is not a fault is false, unless the key was being written when the
         # check read it: its status is recorded only after the write, so the row read may come from a newer change
@@ -636,8 +641,37 @@ class Live:
             self.reports.append({"t": rec["t"], "key": k, "watermark": w, "status": status.get(k),
                                  "being_written": k in writing, "cached_verdict": k in cached_set,
                                  "target_state_read": self.read_states.get(k), "valid_states": self.valid_states(k)})
-            self.watch.add(k)
         return {"rec": rec, "candidates": cands, "reported": reported}
+
+    # -- state shared with the replicator. In one process these use the lock; bench/live_split.py runs the
+    # replicator in another process and implements them as messages to it.
+
+    def _phase1(self, want_ladder: bool):
+        """Watermark and copies of the target-side sketches, at one instant. Returns (w, ladder copy or None if
+        not wanted, other sketches' copies, ms the replicator was paused)."""
+        t0 = time.perf_counter()
+        with self.tlock:
+            w = self.w_t
+            tgt = copy.deepcopy(self.tgt)
+            extra_state = self.snapshot_extra()
+        return w, tgt, extra_state, (time.perf_counter() - t0) * 1000
+
+    def _freeze(self, keys: list) -> dict:
+        """Pause status updates until _release; return keys being written and each key's last processed version."""
+        self.tlock.acquire()
+        return {"writing": set(self.in_flight),
+                "version": {k: self.last_status[k][1] for k in keys if k in self.last_status}}
+
+    def _truth_state(self, reported: list) -> dict:
+        """(While frozen) the harness's ground truth: faulty keys, the status of reported keys, and the target
+        content last applied for each faulty key."""
+        faulty = dict(self.faulty)
+        return {"faulty": faulty, "status": {k: self.last_status.get(k) for k in reported},
+                "last_t": {k: self.last_t.get(k) for k in faulty}}
+
+    def _release(self, watch: list) -> None:
+        self.watch.update(watch)
+        self.tlock.release()
 
     def full_rescan(self, pg, target: Target):
         cache = {}

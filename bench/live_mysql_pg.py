@@ -188,13 +188,14 @@ class PGTarget:
     """PostgreSQL target. As on Cassandra, rows carry src_v and deletes leave a versioned tombstone.
     Writes and confirmation reads use separate connections: they run on different threads."""
 
-    def __init__(self):
+    def __init__(self, fresh: bool = True):
         import psycopg
 
-        with psycopg.connect(f"host={PGT_HOST} port={PGT_PORT} user=postgres password=deltaproof dbname=postgres",
-                             autocommit=True) as admin:
-            admin.execute("DROP DATABASE IF EXISTS tpcc_target WITH (FORCE)")
-            admin.execute("CREATE DATABASE tpcc_target")
+        if fresh:  # a new, empty target database; otherwise attach to the existing one
+            with psycopg.connect(f"host={PGT_HOST} port={PGT_PORT} user=postgres password=deltaproof dbname=postgres",
+                                 autocommit=True) as admin:
+                admin.execute("DROP DATABASE IF EXISTS tpcc_target WITH (FORCE)")
+                admin.execute("CREATE DATABASE tpcc_target")
         self.w = psycopg.connect(PGT_URL)
         self.r = psycopg.connect(PGT_URL, autocommit=True)
 
@@ -402,7 +403,14 @@ def main() -> None:
     p.add_argument("--suffix", default="")
     p.add_argument("--ladder-every", type=int, default=1)
     p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
+    p.add_argument("--split", action="store_true",
+                   help="run the verifier and the replicator in separate processes (bench/live_split.py)")
     args = p.parse_args()
+    if args.mode == "live" and args.split:
+        import live_split
+
+        live_split.run(args, "mysql_pg")
+        return
     {"load": run_load, "baseline": run_baseline, "live": run_live}[args.mode](args)
 
 

@@ -214,6 +214,10 @@ class ClusterLive(Live):
         self.snapshot_done = threading.Event()
         self.snapshot_events = 0
         self.ts_lag_ms: list = []  # commit -> applied, from Debezium's source.ts_ms
+        # What this process does with the stream. One process does both; with the verifier in its own process
+        # (bench/live_split.py) the replicator only feeds its queue and the verifier only maintains the source side.
+        self.do_source, self.do_queue, self.role = True, True, "both"
+        self.max_polled = 0  # highest version read from the stream
 
     def src_update(self, khi, klo, dig, sign):
         super().src_update(khi, klo, dig, sign)
@@ -226,7 +230,8 @@ class ClusterLive(Live):
     def poller(self) -> None:
         from confluent_kafka import Consumer, TopicPartition
 
-        c = Consumer({"bootstrap.servers": self.bootstrap, "group.id": self.topic, "auto.offset.reset": "earliest",
+        c = Consumer({"bootstrap.servers": self.bootstrap, "group.id": f"{self.topic}_{self.role}",
+                      "auto.offset.reset": "earliest",
                       "enable.auto.commit": False, "fetch.max.bytes": 64 << 20})
         c.assign([TopicPartition(self.topic, 0, 0)])
         idle = 0
@@ -234,7 +239,7 @@ class ClusterLive(Live):
             t0 = time.thread_time()
             msgs = c.consume(num_messages=5000, timeout=0.5)
             arrived = time.monotonic()
-            batch, src, hist = [], [], []
+            batch, src, hist, top = [], [], [], 0
             for m in msgs:
                 if m.error() or m.value() is None:
                     continue
@@ -248,23 +253,25 @@ class ClusterLive(Live):
                 old, new = self.decode(spec, ev.get("before")), self.decode(spec, ev.get("after"))
                 if ev.get("op") in ("r", "c"):
                     old = None
-                t1 = time.perf_counter()
-                new_e = spec.element(new) if new is not None else None
-                if old is not None:
-                    src.append((v, *spec.element(old), -1))
-                if new_e is not None:
-                    src.append((v, *new_e, +1))
-                self.stats.source_sketch_s += time.perf_counter() - t1
-                row = spec.normalize(new) if new is not None else None
                 parts = tuple(int((new or old)[k]) for k in spec.key)
                 key = canon.pack_key(spec.tag, parts)
-                hist.append((key, v, new_e[2] if new_e else None))
-                batch.append((arrived, v, spec, row, parts, key))
+                if self.do_source:
+                    t1 = time.perf_counter()
+                    new_e = spec.element(new) if new is not None else None
+                    if old is not None:
+                        src.append((v, *spec.element(old), -1))
+                    if new_e is not None:
+                        src.append((v, *new_e, +1))
+                    self.stats.source_sketch_s += time.perf_counter() - t1
+                    hist.append((key, v, new_e[2] if new_e else None))
+                if self.do_queue:
+                    batch.append((arrived, v, spec, spec.normalize(new) if new is not None else None, parts, key))
+                top = v
                 if ev.get("op") == "r":  # snapshot read: part of the backfill
                     self.snapshot_events += 1
                 if s.get("snapshot") == "last":
                     self.snapshot_done.set()
-            self.stats.changes += len(batch)
+            self.stats.changes += len(batch) if self.do_queue else len(hist)
             with self.slock:
                 self.src_pending.extend(src)
                 for key, v, d in hist:
@@ -273,6 +280,7 @@ class ClusterLive(Live):
             with self.qlock:
                 self.queue.extend(batch)
                 self.stats.max_backlog = max(self.stats.max_backlog, len(self.queue) + len(self.deferred))
+            self.max_polled = max(self.max_polled, top)  # after the batch is visible to the verifier
             self.stats.poll_cpu_s += time.thread_time() - t0
             if not msgs:
                 if self.stop_polling.is_set():
@@ -547,7 +555,14 @@ def main() -> None:
     p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
     p.add_argument("--ladder-every", type=int, default=1,
                    help="decode the ladder baseline every N live checks; others use the rateless sketch")
+    p.add_argument("--split", action="store_true",
+                   help="run the verifier and the replicator in separate processes (bench/live_split.py)")
     args = p.parse_args()
+    if args.mode == "live" and args.split:
+        import live_split
+
+        live_split.run(args, "cluster")
+        return
     {"load": run_load, "baseline": run_baseline, "live": run_live}[args.mode](args)
 
 
