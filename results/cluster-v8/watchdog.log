@@ -1,0 +1,8 @@
+2026-10-29 23:41:54 watchdog started; deadline in 320 min
+2026-10-30 06:49:19 deadline reached before the series finished
+2026-10-30 06:49:24 results copied from gs://project-1a3acb3c-16eb-4b5f-b13-deltaproof-results/dp-app-20261030T110448Z-cluster.tgz: baseline_r200.csv baseline_runlimited.csv live_r100_l2_long3_verifications.csv live_r100_l2_long3.csv live_r200_l2_o0.05_verifications.csv live_r200_l2_o0.05.csv live_r200_l2_verifications.csv live_r200_l2.csv live_r200_l5_verifications.csv live_r200_l5.csv live_runlimited_l2_verifications.csv live_runlimited_l2.csv series.log 
+WARNING: The following filter keys were not present in any resource : labels.deltaproof
+WARNING: The following filter keys were not present in any resource : labels.deltaproof
+WARNING: The following filter keys were not present in any resource : labels.deltaproof, name
+cluster VMs left:        0, disks left:        0
+2026-10-30 06:49:27 watchdog finished
