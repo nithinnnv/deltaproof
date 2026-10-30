@@ -300,6 +300,15 @@ class ClusterLive(Live):
                 "riblt_candidates_equal_ladder": (r.keys == candidates) if candidates is not None else None,
                 "riblt_keys": r.keys}
 
+    def state_valid(self, key, state: tuple) -> bool:
+        """Is the target's (version, digest) a state the source held at or after w_T? With --no-tombstones
+        (ablation), an absent row matches any deleted source state whatever its version, as it did before
+        deletes carried versions: a dropped insert whose delete is still in flight is then accepted."""
+        valid = self.valid_states(key)
+        if state[1] is None and getattr(self.a, "no_tombstones", False):
+            return any(d is None for _, d in valid)
+        return state in valid
+
     def confirm_many(self, target, keys: list) -> list:
         """Version-aware confirmation with versioned deletes: an absent row is (tombstone version, absent),
         or (0, absent) if the key was never deleted, and must be one of the source's states at or after w_T."""
@@ -329,7 +338,7 @@ class ClusterLive(Live):
                 v_t = row.pop("src_v")
                 state = (v_t, spec.element(row)[2])
             self.read_states[key] = state
-            if state not in self.valid_states(key):
+            if not self.state_valid(key, state):
                 reported.append(key)
         return reported
 
@@ -398,7 +407,7 @@ def run_live(args) -> None:
     out = {"mode": "live", "rate": args.rate, "seconds": args.seconds, "terminals": args.terminals,
            "warehouses": args.warehouses, "lag_s": args.lag, "reorder": args.reorder, "drop": args.drop,
            "corrupt": args.corrupt, "interval_s": args.interval, "rateless_symbols": args.symbols,
-           "cassandra_nodes": len(CASS_IPS)}
+           "cassandra_nodes": len(CASS_IPS), "no_tombstones": args.no_tombstones}
     register_connector(name, topic)
     pg = connect_pg()
     live.t_start = time.monotonic()
@@ -535,6 +544,7 @@ def main() -> None:
     p.add_argument("--symbols", type=int, default=1 << 18)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--suffix", default="", help="appended to result file names, e.g. _long")
+    p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
     p.add_argument("--ladder-every", type=int, default=1,
                    help="decode the ladder baseline every N live checks; others use the rateless sketch")
     args = p.parse_args()

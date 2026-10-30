@@ -585,7 +585,10 @@ class Live:
         with self.tlock:  # phase 2: confirm, re-reading only keys that may have changed
             version = lambda k: self.last_status[k][1] if k in self.last_status else None
             writing = set(self.in_flight)
-            cached = [k for k in cands if k in self.reported_cache and self.reported_cache[k] == version(k)
+            # The cache is sound because a version names one state exactly; without delete versions (the
+            # --no-tombstones ablation) an absent row cannot be matched to a delete, so every candidate is re-read.
+            reuse = not getattr(self.a, "no_tombstones", False)
+            cached = [k for k in cands if reuse and k in self.reported_cache and self.reported_cache[k] == version(k)
                       and k not in writing]  # a key being written now may have a new row: read it
             cached_set = set(cached)
             fresh = [k for k in cands if k not in cached_set]

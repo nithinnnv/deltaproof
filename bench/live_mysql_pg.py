@@ -286,7 +286,7 @@ class MySQLPGLive(ClusterLive):
             for key, v in target.tombstones(absent).items():
                 state[key] = (v, None)
         self.read_states.update(state)
-        return [key for key in keys if state[key] not in self.valid_states(key)]
+        return [key for key in keys if not self.state_valid(key, state[key])]
 
     def full_rescan(self, pg, target):
         cache = {}
@@ -324,7 +324,8 @@ def run_live(args) -> None:
     target = PGTarget()
     target.create()
     live = MySQLPGLive(args, topic)
-    out = {"pipeline": "mysql->postgresql", "mode": "live", "rate": args.rate, "seconds": args.seconds,
+    out = {"pipeline": "mysql->postgresql", "mode": "live", "no_tombstones": args.no_tombstones,
+           "rate": args.rate, "seconds": args.seconds,
            "terminals": args.terminals, "warehouses": args.warehouses, "lag_s": args.lag, "reorder": args.reorder,
            "drop": args.drop, "corrupt": args.corrupt, "interval_s": args.interval, "rateless_symbols": args.symbols}
     register_connector(name, topic)
@@ -400,6 +401,7 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--suffix", default="")
     p.add_argument("--ladder-every", type=int, default=1)
+    p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
     args = p.parse_args()
     {"load": run_load, "baseline": run_baseline, "live": run_live}[args.mode](args)
 
