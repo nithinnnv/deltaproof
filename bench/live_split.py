@@ -121,7 +121,8 @@ def replicator_main(conn, pipe_name: str, args, topic: str, t_start: float) -> N
                 t.join()
             conn.send(live.max_processed)
         elif cmd == "final":
-            conn.send({"stats": live.stats, "tgt": live.tgt, "tgt_r": live.tgt_r, "followups": live.followups})
+            conn.send({"stats": live.stats, "tgt": live.tgt, "tgt_r": live.tgt_r, "followups": live.followups,
+                       "ever_faulty": live.ever_faulty})
         elif cmd == "exit":
             close()
             conn.send(True)
@@ -221,6 +222,7 @@ def run(args, pipe_name: str) -> None:
     fin = live._call("final")
     v_source_s = live.stats.source_sketch_s
     live.stats, live.tgt, live.tgt_r, live.followups = fin["stats"], fin["tgt"], fin["tgt_r"], fin["followups"]
+    live.ever_faulty = fin["ever_faulty"]
     live.stats.source_sketch_s = v_source_s
     print("final full scans for ground truth", flush=True)
     s_scan, t_scan = P.scans()
@@ -241,4 +243,5 @@ def run(args, pipe_name: str) -> None:
     proc.join(timeout=60)
     P.drop(name)
     close()
-    live_cluster.write(tag, out, live.verifications, live.reports, live.misses, sub=P.sub, followups=live.followups)
+    live_cluster.write(tag, out, live.verifications, live.reports, live.misses, sub=P.sub, followups=live.followups,
+                       ever_faulty=live.ever_faulty)

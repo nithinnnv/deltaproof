@@ -1,0 +1,117 @@
+Debezium snapshot (backfill) running
+  backfill done: 569,051 rows in 38.2 s; reported=538 false=0
+TPC-C running (600s)
+  t=52.1s cand=543 reported=543 false=0 missed=0 riblt=80280B backlog=2783
+  t=62.7s cand=548 reported=548 false=0 missed=0 riblt=80496B backlog=2994
+  t=73.5s cand=552 reported=551 false=0 missed=0 riblt=81576B backlog=2725
+  t=84.0s cand=555 reported=555 false=0 missed=0 riblt=83376B backlog=2253
+  t=94.4s cand=561 reported=561 false=0 missed=0 riblt=83448B backlog=3157
+  t=104.8s cand=569 reported=567 false=0 missed=0 riblt=87120B backlog=3456
+  t=115.3s cand=580 reported=579 false=0 missed=0 riblt=87120B backlog=4004
+  t=125.7s cand=584 reported=584 false=0 missed=0 riblt=87120B backlog=3300
+  t=136.0s cand=594 reported=594 false=0 missed=0 riblt=91944B backlog=2716
+  t=146.6s cand=600 reported=600 false=0 missed=0 riblt=95112B backlog=2619
+  t=157.0s cand=595 reported=595 false=0 missed=0 riblt=95688B backlog=2647
+  t=167.4s cand=601 reported=601 false=0 missed=0 riblt=94824B backlog=3188
+  t=177.8s cand=605 reported=604 false=0 missed=0 riblt=95472B backlog=4961
+  t=188.3s cand=611 reported=611 false=0 missed=0 riblt=96768B backlog=2745
+  t=198.8s cand=611 reported=611 false=0 missed=0 riblt=97056B backlog=2687
+  t=209.3s cand=625 reported=624 false=0 missed=0 riblt=98784B backlog=3191
+  t=219.8s cand=632 reported=632 false=0 missed=0 riblt=98784B backlog=3013
+  t=230.3s cand=635 reported=635 false=0 missed=0 riblt=99216B backlog=3394
+  t=241.0s cand=639 reported=639 false=0 missed=0 riblt=100584B backlog=2589
+  t=251.6s cand=649 reported=649 false=0 missed=0 riblt=102960B backlog=2479
+  t=262.1s cand=655 reported=654 false=0 missed=0 riblt=101952B backlog=2881
+  t=272.4s cand=657 reported=657 false=0 missed=0 riblt=105624B backlog=2982
+  t=283.0s cand=665 reported=664 false=0 missed=0 riblt=106272B backlog=3202
+  t=293.4s cand=663 reported=663 false=0 missed=0 riblt=106416B backlog=3173
+  t=303.8s cand=668 reported=668 false=0 missed=0 riblt=106416B backlog=3272
+  t=314.2s cand=682 reported=682 false=0 missed=0 riblt=107568B backlog=2773
+  t=324.6s cand=692 reported=692 false=0 missed=0 riblt=109944B backlog=3085
+  t=334.9s cand=701 reported=701 false=0 missed=0 riblt=110808B backlog=3035
+  t=345.1s cand=704 reported=704 false=0 missed=0 riblt=110952B backlog=3200
+  t=355.7s cand=706 reported=706 false=0 missed=0 riblt=112680B backlog=3697
+  t=366.1s cand=706 reported=706 false=0 missed=0 riblt=112680B backlog=2707
+  t=376.6s cand=716 reported=716 false=0 missed=0 riblt=114984B backlog=3401
+  t=387.0s cand=711 reported=710 false=0 missed=0 riblt=110736B backlog=2604
+  t=397.6s cand=715 reported=715 false=0 missed=0 riblt=111168B backlog=2404
+  t=408.1s cand=719 reported=719 false=0 missed=0 riblt=112680B backlog=3745
+  t=418.5s cand=718 reported=718 false=0 missed=0 riblt=113112B backlog=2466
+  t=428.9s cand=720 reported=720 false=0 missed=0 riblt=118368B backlog=2830
+  t=439.5s cand=723 reported=723 false=0 missed=0 riblt=118368B backlog=2902
+  t=449.9s cand=735 reported=735 false=0 missed=0 riblt=119304B backlog=3373
+  t=460.6s cand=735 reported=734 false=0 missed=0 riblt=120096B backlog=2797
+  t=471.4s cand=738 reported=737 false=0 missed=0 riblt=118872B backlog=2605
+  t=482.0s cand=748 reported=748 false=0 missed=0 riblt=122544B backlog=2829
+  t=492.8s cand=753 reported=752 false=0 missed=0 riblt=121680B backlog=2482
+  t=503.2s cand=759 reported=759 false=0 missed=0 riblt=123984B backlog=3115
+  t=513.8s cand=769 reported=769 false=0 missed=0 riblt=122904B backlog=2666
+  t=524.4s cand=768 reported=768 false=0 missed=0 riblt=123984B backlog=2743
+  t=535.0s cand=769 reported=769 false=0 missed=0 riblt=126144B backlog=2651
+  t=545.5s cand=774 reported=774 false=0 missed=0 riblt=127584B backlog=2788
+  t=556.1s cand=781 reported=781 false=0 missed=0 riblt=124632B backlog=2914
+  t=566.9s cand=792 reported=792 false=0 missed=0 riblt=127008B backlog=2598
+  t=577.4s cand=797 reported=797 false=0 missed=0 riblt=127800B backlog=2630
+  t=587.9s cand=804 reported=804 false=0 missed=0 riblt=129600B backlog=2840
+  t=598.4s cand=811 reported=811 false=0 missed=0 riblt=129600B backlog=2731
+  t=608.7s cand=807 reported=807 false=0 missed=0 riblt=128376B backlog=3431
+  t=619.3s cand=814 reported=814 false=0 missed=0 riblt=130752B backlog=2575
+  t=630.0s cand=824 reported=823 false=0 missed=0 riblt=132336B backlog=2627
+  t=640.5s cand=829 reported=829 false=0 missed=0 riblt=135864B backlog=2743
+TPC-C finished; draining the change stream
+final full scans for ground truth
+pipeline                               mysql->postgresql
+mode                                   live
+split_processes                        True
+rate                                   100
+seconds                                600
+terminals                              8
+warehouses                             1
+lag_s                                  2.0
+reorder                                0.0
+drop                                   0.0005
+corrupt                                0.0005
+interval_s                             10.0
+rateless_symbols                       262144
+no_tombstones                          False
+backfill_events                        569051
+backfill_s                             38.2
+tpcc_throughput_tps                    100.0
+tpcc_goodput_tps                       99.52
+tpcc_latency_p50_ms                    4.84
+tpcc_latency_p95_ms                    30.34
+tpcc_latency_p99_ms                    124.67
+changes_captured                       1428639
+dropped                                686
+corrupted                              692
+deferred                               0
+applied_ops                            1356775
+max_backlog                            421000
+apply_delay_p50_s                      2.01
+apply_delay_p99_s                      2.02
+source_sketches_us_per_change          32.3
+live_verifications                     57
+live_candidates_total                  39217
+live_reported_total                    39204
+live_reported_false_total              0
+live_reported_while_rewritten_total    0
+live_missed_total                      0
+live_faulty_being_rewritten_total      1
+live_faulty_content_agrees_max         0
+live_check_ms_median                   328.1
+live_replicator_paused_ms_median       46.4
+live_target_point_reads_total          691
+live_cached_verdicts_total             38526
+live_ladder_checks                     5
+live_ladder_bytes_median               777600.0
+live_riblt_bytes_median                110808.0
+live_riblt_agrees_with_ladder          True
+live_riblt_agreement_checks            7
+final_rows_source                      876223
+final_rows_target                      875912
+final_truth_keys                       834
+final_reported_equals_truth            True
+final_candidates_equal_truth           True
+ladder_sketches_match_rescan           True
+riblt_sketches_match_rescan            True
+wrote /Users/macintoshhd/workspace/diffsketch/.claude/worktrees/diffsketch-core/results/mysql_pg/live_r100_l2_baselines.csv

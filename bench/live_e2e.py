@@ -272,6 +272,7 @@ class Live:
         self.watch: set = set()
         self.followups: list[dict] = []
         self.n_live = 0  # live checks so far, for --ladder-every
+        self.ever_faulty: set = set()  # every key the replicator ever mishandled, to classify other tools' reports
 
     # -- setup
 
@@ -464,6 +465,7 @@ class Live:
                     self.last_status[key] = (st, lsn)
                     if st in FAULTY:  # small map of currently faulty keys, cheap to copy at checks
                         self.faulty[key] = (st, lsn)
+                        self.ever_faulty.add(key)
                     else:
                         self.faulty.pop(key, None)
                 self.w_t = max(self.w_t, self.next_w)

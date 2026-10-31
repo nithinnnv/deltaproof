@@ -515,7 +515,7 @@ def summarize(live, final: dict, s_scan, t_scan, truth: set) -> dict:
 
 
 def write(tag: str, out: dict, verifications: list, reports: list, misses: list = (), sub: str = "cluster",
-          followups: list = ()) -> None:
+          followups: list = (), ever_faulty: set = ()) -> None:
     import csv
 
     d = ROOT / "results" / sub
@@ -525,7 +525,8 @@ def write(tag: str, out: dict, verifications: list, reports: list, misses: list 
         w.writerow(["metric", "value"])
         w.writerows(out.items())
     for name, rows in (("verifications", verifications), ("unexplained_reports", reports), ("missed", list(misses)),
-                       ("report_followups", list(followups))):
+                       ("report_followups", list(followups)),
+                       ("ever_faulty", [{"khi": k[0], "klo": k[1]} for k in sorted(ever_faulty)])):
         if rows:
             keys = list(dict.fromkeys(k for r in rows for k in r))
             with (d / f"{tag}_{name}.csv").open("w", newline="") as f:
