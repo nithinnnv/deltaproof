@@ -1,0 +1,76 @@
+Debezium snapshot (backfill) of 15,108,341 rows into 16 partitions
+  backfill done: 15,108,341 rows in 361.2 s; reported=14940 false=0
+TPC-C running (300s)
+  t=384.0s cand=15014 reported=15005 false=0 missed=0 riblt=2228544B slowest=1233.2ms backlog=66318
+  t=395.1s cand=15142 reported=15138 false=0 missed=0 riblt=2261376B slowest=947.4ms backlog=54421
+  t=406.3s cand=15210 reported=15202 false=0 missed=0 riblt=2275416B slowest=1001.0ms backlog=45597
+  t=417.7s cand=15317 reported=15304 false=0 missed=0 riblt=2297376B slowest=1226.3ms backlog=42088
+  t=429.1s cand=15364 reported=15346 false=0 missed=0 riblt=2313936B slowest=1121.2ms backlog=48197
+  t=440.3s cand=15425 reported=15420 false=0 missed=0 riblt=2330496B slowest=904.3ms backlog=29900
+  t=451.8s cand=15447 reported=15433 false=0 missed=0 riblt=2337768B slowest=1171.0ms backlog=41741
+  t=463.1s cand=15497 reported=15488 false=0 missed=0 riblt=2349072B slowest=1157.8ms backlog=44158
+  t=474.5s cand=15571 reported=15560 false=0 missed=0 riblt=2352384B slowest=1140.8ms backlog=44673
+  t=486.5s cand=15563 reported=15548 false=0 missed=0 riblt=2365200B slowest=1883.3ms backlog=73986
+  t=497.8s cand=15540 reported=15537 false=0 missed=0 riblt=2362032B slowest=1124.2ms backlog=52584
+  t=508.9s cand=15554 reported=15549 false=0 missed=0 riblt=2361384B slowest=998.6ms backlog=44918
+  t=520.4s cand=15641 reported=15620 false=0 missed=0 riblt=2378952B slowest=1310.4ms backlog=60666
+  t=531.9s cand=15681 reported=15678 false=0 missed=0 riblt=2383056B slowest=1272.2ms backlog=40890
+  t=543.5s cand=15804 reported=15799 false=0 missed=0 riblt=2421936B slowest=1243.0ms backlog=42184
+  t=554.7s cand=15958 reported=15948 false=0 missed=0 riblt=2436768B slowest=1098.9ms backlog=43376
+  t=566.1s cand=16106 reported=16099 false=0 missed=0 riblt=2469744B slowest=1123.7ms backlog=39941
+  t=577.5s cand=16294 reported=16285 false=0 missed=0 riblt=2504232B slowest=1233.7ms backlog=35249
+  t=588.8s cand=16331 reported=16317 false=0 missed=0 riblt=2515824B slowest=1225.0ms backlog=48726
+  t=600.5s cand=16347 reported=16330 false=0 missed=0 riblt=2520360B slowest=1478.1ms backlog=39465
+  t=612.1s cand=16398 reported=16387 false=0 missed=0 riblt=2524392B slowest=1404.9ms backlog=57869
+  t=623.6s cand=16477 reported=16462 false=0 missed=0 riblt=2541240B slowest=1381.8ms backlog=48087
+  t=635.0s cand=16588 reported=16576 false=0 missed=0 riblt=2559456B slowest=1422.4ms backlog=65325
+  t=646.5s cand=16685 reported=16661 false=0 missed=0 riblt=2573928B slowest=1433.3ms backlog=59085
+  t=658.1s cand=16800 reported=16783 false=0 missed=0 riblt=2603952B slowest=1339.5ms backlog=44264
+  t=669.9s cand=16866 reported=16850 false=0 missed=0 riblt=2604384B slowest=1511.2ms backlog=44267
+TPC-C finished; draining the change stream
+final full scans for ground truth
+pipeline                               postgresql->cassandra
+cassandra_nodes                        3
+mode                                   live
+shards                                 16
+rate                                   2000
+seconds                                300
+terminals                              128
+warehouses                             32
+lag_s                                  2.0
+reorder                                0.0
+drop                                   0.0005
+corrupt                                0.0005
+interval_s                             10.0
+rateless_symbols                       262144
+no_tombstones                          False
+backfill_events                        15108341
+backfill_s                             361.2
+tpcc_throughput_tps                    1999.83
+tpcc_goodput_tps                       1614.9
+tpcc_latency_p50_ms                    17.08
+tpcc_latency_p95_ms                    118.26
+tpcc_latency_p99_ms                    187.0
+changes_captured                       22094775
+dropped                                10532
+corrupted                              10805
+deferred                               0
+apply_delay_p50_s                      2.01
+apply_delay_p99_s                      2.44
+live_rounds                            26
+live_reported_false_total              0
+live_reported_while_rewritten_total    0
+live_missed_total                      0
+live_round_ms_median                   1229.75
+live_replicator_paused_ms_median       415.15
+live_riblt_bytes_median                2381004.0
+live_riblt_agrees_with_ladder          True
+final_rows_source                      17325062
+final_rows_target                      17318073
+final_truth_keys                       16903
+final_reported_equals_truth            True
+final_candidates_equal_truth           True
+shards_own_every_key_once              True
+ladder_sketches_match_rescan           True
+riblt_sketches_match_rescan            True
+wrote /home/macintoshhd/deltaproof/results/cluster/live_r2000_l2_s16_sweep.csv
