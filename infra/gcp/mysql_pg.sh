@@ -79,7 +79,7 @@ up() {
   gcloud compute scp /tmp/dpm-benchbase.tgz dpm-app:/tmp/ --zone "$ZONE" --quiet
   on dpm-app "set -e; rm -rf ~/deltaproof ~/benchbase-mysql; git clone -q $REPO ~/deltaproof; \
     tar -C ~ -xzf /tmp/dpm-benchbase.tgz; python3 -m venv ~/venv; \
-    ~/venv/bin/pip install -q -e \"\$HOME/deltaproof[db]\" confluent-kafka requests; \
+    ~/venv/bin/pip install -q -e \"\$HOME/deltaproof[db]\" confluent-kafka requests orjson py-spy; \
     echo MYSQL_IP=$MYSQL_IP PGT_IP=127.0.0.1 KAFKA_IP=$APP_IP > ~/cluster.env; cat ~/cluster.env; \
     git -C ~/deltaproof log --oneline -1"
 }

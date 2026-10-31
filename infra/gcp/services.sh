@@ -56,7 +56,7 @@ start() {
   gcloud compute scp /tmp/dp-benchbase.tgz dp-app:/tmp/ --zone "$ZONE" --quiet
   on dp-app "set -e; rm -rf ~/deltaproof ~/benchbase-postgres; git clone -q $REPO ~/deltaproof; \
     tar -C ~ -xzf /tmp/dp-benchbase.tgz; python3 -m venv ~/venv; \
-    ~/venv/bin/pip install -q -e \"\$HOME/deltaproof[db]\" confluent-kafka requests; \
+    ~/venv/bin/pip install -q -e \"\$HOME/deltaproof[db]\" confluent-kafka requests orjson py-spy; \
     echo PG_IP=$PG_IP KAFKA_IP=$KAFKA_IP CASS_IPS=$(for j in $(seq 1 "$CASS_NODES"); do printf '%s,' "$(ip dp-cass-$j)"; done) > ~/cluster.env"
   on dp-app "cat ~/cluster.env"
 }

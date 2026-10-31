@@ -37,6 +37,16 @@ from deltaproof.sketch import Sketch  # noqa: E402
 from deltaproof.store import exact_diff  # noqa: E402
 
 
+def _count(conn, tables: list) -> int:
+    with conn:
+        cur = conn.cursor()
+        total = 0
+        for t in tables:
+            cur.execute(f"SELECT count(*) FROM {t}")
+            total += cur.fetchone()[0]
+        return total
+
+
 def pipeline(name: str) -> SimpleNamespace:
     """What differs between the engine pairs; importable by name in the replicator process."""
     import live_cluster as lc
@@ -55,7 +65,9 @@ def pipeline(name: str) -> SimpleNamespace:
             register=lc.register_connector, drop=lc.drop_connector,
             scans=lambda: (scan(lc.PG_URL, list(TPCC), 8), scan(lc.CASS_URL, list(TPCC), 8)),
             benchbase=lambda tag, a: lc.benchbase(tag, a.warehouses, a.rate, a.seconds, a.terminals, "execute"),
-            out_extra={"pipeline": "postgresql->cassandra", "cassandra_nodes": len(lc.CASS_IPS)})
+            out_extra={"pipeline": "postgresql->cassandra", "cassandra_nodes": len(lc.CASS_IPS)},
+            create_topic=lambda topic, n: lc.create_topic(topic, n),
+            source_rows=lambda: _count(lc.connect_pg(), [s.name for s in TPCC]))
     if name == "mysql_pg":
         import live_mysql_pg as mp_
 
@@ -70,18 +82,20 @@ def pipeline(name: str) -> SimpleNamespace:
             register=mp_.register_connector, drop=mp_.drop_connector,
             scans=lambda: (mp_.scan_mysql(), scan(mp_.PGT_URL, list(mp_.TPCC_MYSQL), 8)),
             benchbase=lambda tag, a: mp_.benchbase(tag, a.warehouses, a.rate, a.seconds, a.terminals, "execute"),
-            out_extra={"pipeline": "mysql->postgresql"})
+            out_extra={"pipeline": "mysql->postgresql"},
+            create_topic=lambda topic, n: lc.create_topic(topic, n, bootstrap=mp_.KAFKA),
+            source_rows=lambda: _count(mp_.connect_mysql(), [s.name for s in mp_.TPCC_MYSQL]))
     raise ValueError(name)
 
 
 # ---------------------------------------------------------------- replicator process
 
 
-def replicator_main(conn, pipe_name: str, args, topic: str, t_start: float) -> None:
+def replicator_main(conn, pipe_name: str, args, topic: str, t_start: float, partition: int = 0) -> None:
     P = pipeline(pipe_name)
     target, close = P.target(False)
     live = P.live_cls(args, topic)
-    live.role, live.do_source, live.t_start = "replicator", False, t_start
+    live.role, live.do_source, live.t_start, live.partition = "replicator", False, t_start, partition
     threads = [threading.Thread(target=live.poller, daemon=True),
                threading.Thread(target=live.applier, args=(target,), daemon=True)]
     for t in threads:

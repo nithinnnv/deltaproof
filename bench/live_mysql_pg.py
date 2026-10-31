@@ -403,9 +403,16 @@ def main() -> None:
     p.add_argument("--suffix", default="")
     p.add_argument("--ladder-every", type=int, default=1)
     p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
+    p.add_argument("--shards", type=int, default=1,
+                   help="Kafka partitions, each verified by its own replicator and verifier processes (bench/live_sharded.py)")
     p.add_argument("--split", action="store_true",
                    help="run the verifier and the replicator in separate processes (bench/live_split.py)")
     args = p.parse_args()
+    if args.mode == "live" and args.shards > 1:
+        import live_sharded
+
+        live_sharded.run(args, "mysql_pg")
+        return
     if args.mode == "live" and args.split:
         import live_split
 

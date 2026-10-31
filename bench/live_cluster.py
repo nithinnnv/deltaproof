@@ -33,6 +33,11 @@ from pathlib import Path
 import numpy as np
 import requests
 
+try:  # several times faster than json for Debezium's change events
+    from orjson import loads as _loads
+except ImportError:  # pragma: no cover
+    _loads = json.loads
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -150,6 +155,15 @@ class ClusterTarget(Target):
                     raise res
 
 
+def create_topic(topic: str, partitions: int, bootstrap: str | None = None) -> None:
+    """Create the change topic up front, so Debezium writes to `partitions` partitions keyed by row key."""
+    from confluent_kafka.admin import AdminClient, NewTopic
+
+    admin = AdminClient({"bootstrap.servers": bootstrap or f"{KAFKA_IP}:9092"})
+    for f in admin.create_topics([NewTopic(topic, num_partitions=partitions, replication_factor=1)]).values():
+        f.result(timeout=60)
+
+
 def register_connector(name: str, topic: str) -> None:
     requests.delete(f"{CONNECT}/connectors/{name}", timeout=30)
     tables = ",".join(f"public.{s.name}" for s in TPCC)
@@ -218,6 +232,10 @@ class ClusterLive(Live):
         # (bench/live_split.py) the replicator only feeds its queue and the verifier only maintains the source side.
         self.do_source, self.do_queue, self.role = True, True, "both"
         self.max_polled = 0  # highest version read from the stream
+        # The Kafka partition this process reads. With one partition, offsets follow the source's commit order; with
+        # several (bench/live_sharded.py), Debezium routes each key to one partition, and a partition's offsets
+        # follow commit order for its keys, so each partition is verified as an independent instance.
+        self.partition = 0
 
     def src_update(self, khi, klo, dig, sign):
         super().src_update(khi, klo, dig, sign)
@@ -233,7 +251,7 @@ class ClusterLive(Live):
         c = Consumer({"bootstrap.servers": self.bootstrap, "group.id": f"{self.topic}_{self.role}",
                       "auto.offset.reset": "earliest",
                       "enable.auto.commit": False, "fetch.max.bytes": 64 << 20})
-        c.assign([TopicPartition(self.topic, 0, 0)])
+        c.assign([TopicPartition(self.topic, self.partition, 0)])
         idle = 0
         while True:
             t0 = time.thread_time()
@@ -243,7 +261,7 @@ class ClusterLive(Live):
             for m in msgs:
                 if m.error() or m.value() is None:
                     continue
-                ev = json.loads(m.value())
+                ev = _loads(m.value())
                 s = ev.get("source", {})
                 spec = self.specs_by_name.get(s.get("table"))
                 if spec is None:
@@ -556,9 +574,16 @@ def main() -> None:
     p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
     p.add_argument("--ladder-every", type=int, default=1,
                    help="decode the ladder baseline every N live checks; others use the rateless sketch")
+    p.add_argument("--shards", type=int, default=1,
+                   help="Kafka partitions, each verified by its own replicator and verifier processes (bench/live_sharded.py)")
     p.add_argument("--split", action="store_true",
                    help="run the verifier and the replicator in separate processes (bench/live_split.py)")
     args = p.parse_args()
+    if args.mode == "live" and args.shards > 1:
+        import live_sharded
+
+        live_sharded.run(args, "cluster")
+        return
     if args.mode == "live" and args.split:
         import live_split
 
