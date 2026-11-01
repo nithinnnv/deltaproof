@@ -37,6 +37,18 @@ from deltaproof.sketch import Sketch  # noqa: E402
 from deltaproof.store import exact_diff  # noqa: E402
 
 
+SCAN_WORKERS = 32
+
+
+def _pg_resources(conn) -> str:
+    """PostgreSQL's data size, and the log it must keep for a replication slot that has fallen behind."""
+    with conn:
+        size = conn.execute("SELECT pg_database_size('tpcc')").fetchone()[0]
+        kept = conn.execute("SELECT coalesce(max(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)), 0) "
+                            "FROM pg_replication_slots").fetchone()[0]
+    return f"pg_data_gb={size / 2**30:.0f} pg_wal_kept_gb={float(kept) / 2**30:.1f}"
+
+
 def _count(conn, tables: list) -> int:
     with conn:
         cur = conn.cursor()
@@ -63,7 +75,8 @@ def pipeline(name: str) -> SimpleNamespace:
         return SimpleNamespace(
             name=name, live_cls=lc.ClusterLive, restore=lc.restore, target=target, sub="cluster",
             register=lc.register_connector, drop=lc.drop_connector,
-            scans=lambda: (scan(lc.PG_URL, list(TPCC), 8), scan(lc.CASS_URL, list(TPCC), 8)),
+            scans=lambda: (scan(lc.PG_URL, list(TPCC), SCAN_WORKERS), scan(lc.CASS_URL, list(TPCC), SCAN_WORKERS)),
+            resources=lambda: _pg_resources(lc.connect_pg()),
             benchbase=lambda tag, a: lc.benchbase(tag, a.warehouses, a.rate, a.seconds, a.terminals, "execute"),
             out_extra={"pipeline": "postgresql->cassandra", "cassandra_nodes": len(lc.CASS_IPS)},
             create_topic=lambda topic, n: lc.create_topic(topic, n),
@@ -81,6 +94,7 @@ def pipeline(name: str) -> SimpleNamespace:
             name=name, live_cls=mp_.MySQLPGLive, restore=mp_.restore, target=target, sub="mysql_pg",
             register=mp_.register_connector, drop=mp_.drop_connector,
             scans=lambda: (mp_.scan_mysql(), scan(mp_.PGT_URL, list(mp_.TPCC_MYSQL), 8)),
+            resources=lambda: "",
             benchbase=lambda tag, a: mp_.benchbase(tag, a.warehouses, a.rate, a.seconds, a.terminals, "execute"),
             out_extra={"pipeline": "mysql->postgresql"},
             create_topic=lambda topic, n: lc.create_topic(topic, n, bootstrap=mp_.KAFKA),

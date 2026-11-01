@@ -29,9 +29,9 @@ sysctl -w vm.max_map_count=1048575 >/dev/null
 touch /var/run/deltaproof-ready'
 
 vms() {
-  echo "dp-pg:$PG_TYPE:200 dp-kafka:$KAFKA_TYPE:100 dp-app:$APP_TYPE:100"
+  echo "dp-pg:$PG_TYPE:${PG_DISK:-200} dp-kafka:$KAFKA_TYPE:${KAFKA_DISK:-100} dp-app:$APP_TYPE:${APP_DISK:-100}"
   i=1
-  while [ "$i" -le "$CASS_NODES" ]; do printf ' dp-cass-%s:%s:200' "$i" "$CASS_TYPE"; i=$((i + 1)); done
+  while [ "$i" -le "$CASS_NODES" ]; do printf ' dp-cass-%s:%s:%s' "$i" "$CASS_TYPE" "${CASS_DISK:-200}"; i=$((i + 1)); done
   echo
 }
 

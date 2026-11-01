@@ -27,19 +27,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import live_split  # noqa: E402
 from live_split import VerifierSide, pipeline, replicator_main  # noqa: E402
 
+from deltaproof.hashing import key_hash  # noqa: E402
 from deltaproof.sizing import RatelessSketch  # noqa: E402
 from deltaproof.sketch import LadderConfig, Sketch  # noqa: E402
 from deltaproof.store import Table, exact_diff  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
+PARTIAL = ["label", "t", "candidates", "reported", "reported_false", "reported_while_rewritten", "missed",
+           "riblt_bytes", "total_ms_max", "replicator_paused_ms_max"]
 
 
-def _members(t: Table, keys: set) -> Table:
-    """The rows of t whose key this shard owns."""
+def _key_ids(pairs) -> np.ndarray:
+    """64-bit ids of (khi, klo) keys, so membership over hundreds of millions of rows stays in NumPy."""
+    a = np.array(list(pairs), dtype=np.uint64).reshape(-1, 2)
+    return key_hash(a[:, 0], a[:, 1])
+
+
+def _members(t: Table, keys) -> Table:
+    """The rows of t whose key this shard owns; keys is a set of (khi, klo), or their sorted ids."""
     if not len(t):
         return t
-    mask = np.fromiter(((h, l) in keys for h, l in zip(t.khi.tolist(), t.klo.tolist())), bool, len(t))
-    return t.take(mask)
+    ids = keys if isinstance(keys, np.ndarray) else np.unique(_key_ids(keys))
+    return t.take(np.isin(key_hash(t.khi, t.klo), ids, assume_unique=False))
+
+
+def _resources(P) -> str:
+    """One line for the log: what a long run could exhaust."""
+    try:
+        with open("/proc/meminfo") as f:
+            mem = {ln.split(":")[0]: int(ln.split()[1]) for ln in f}
+        return (f"mem_free_gb={mem['MemAvailable'] / 2**20:.0f} " + P.resources())
+    except Exception as e:  # never let monitoring end a run
+        return f"resources unavailable: {e}"
 
 
 class ShardVerifier(VerifierSide):
@@ -180,17 +199,30 @@ def run(args, pipe_name: str) -> None:
     bb = P.benchbase(tag, args)
     print(f"TPC-C running ({args.seconds}s)", flush=True)
     next_check = time.monotonic() + args.interval
+    next_resources = time.monotonic()
+    # Rounds reach disk as they happen, so a run that dies later still has its record.
+    partial_dir = ROOT / "results" / P.sub
+    partial_dir.mkdir(parents=True, exist_ok=True)
+    partial_file = (partial_dir / f"{tag}_rounds_partial.csv").open("w", newline="")
+    partial = csv.DictWriter(partial_file, fieldnames=PARTIAL)
+    partial.writeheader()
     while bb.poll() is None:
         if time.monotonic() >= next_check:
             r = _round(_broadcast(coords, "check", "live"))
             rounds.append(r)
+            partial.writerow({k: r.get(k) for k in PARTIAL})
+            partial_file.flush()
+            if time.monotonic() >= next_resources:
+                print(f"  resources t={r['t']}s {_resources(P)}", flush=True)
+                next_resources = time.monotonic() + 300
             backlog = sum(p["backlog"] for p in _broadcast(coords, "progress"))
             print(f"  t={r['t']}s cand={r['candidates']} reported={r['reported']} false={r['reported_false']} "
                   f"missed={r['missed']} riblt={r['riblt_bytes']}B slowest={r['total_ms_max']}ms backlog={backlog}",
                   flush=True)
             next_check = time.monotonic() + args.interval
         time.sleep(0.2)
-    print("TPC-C finished; draining the change stream", flush=True)
+    print(f"TPC-C finished (benchbase exit {bb.returncode}); draining the change stream", flush=True)
+    out["benchbase_exit"] = bb.returncode
     out.update(live_cluster.benchbase_summary(tag))
     time.sleep(10)
     _broadcast(coords, "stop")
@@ -200,13 +232,13 @@ def run(args, pipe_name: str) -> None:
     for p in procs:
         p.join(timeout=60)
 
-    print("final full scans for ground truth", flush=True)
+    print(f"final full scans for ground truth; {_resources(P)}", flush=True)
     s_scan, t_scan = P.scans()
     a, b = exact_diff(s_scan, t_scan)
     truth = {(h, l) for h, l, _ in a} | {(h, l) for h, l, _ in b}
     reported = set().union(*(f["final_reported"] for f in fins))
     candidates = set().union(*(f["final_candidates"] for f in fins))
-    owned = [f["owned"] for f in fins]
+    owned = [np.unique(_key_ids(f["owned"])) for f in fins]
     same_r = lambda x, y: all(np.array_equal(p, q) for p, q in zip(x.arrays, y.arrays))
     sketches_ok, riblt_ok = True, True
     for f, keys in zip(fins, owned):  # each shard's sketches against sketches rebuilt from its keys' rows
@@ -220,9 +252,8 @@ def run(args, pipe_name: str) -> None:
         qs.update(s_own.khi, s_own.klo, s_own.dig)
         qt.update(t_own.khi, t_own.klo, t_own.dig)
         riblt_ok &= same_r(f["src_r"], qs) and same_r(f["tgt_r"], qt)
-    union = set().union(*owned)
-    rows_keys = {(h, l) for h, l in zip(s_scan.khi.tolist(), s_scan.klo.tolist())} | \
-                {(h, l) for h, l in zip(t_scan.khi.tolist(), t_scan.klo.tolist())}
+    union = np.unique(np.concatenate(owned))
+    rows_keys = np.unique(np.concatenate([key_hash(s_scan.khi, s_scan.klo), key_hash(t_scan.khi, t_scan.klo)]))
     live_rounds = [r for r in rounds if r["label"] == "live"]
     lag = np.concatenate([np.array(f["stats"].lag_samples) for f in fins if f["stats"].lag_samples] or [np.zeros(1)])
     med = lambda xs: float(np.median(xs)) if len(xs) else None
@@ -242,7 +273,8 @@ def run(args, pipe_name: str) -> None:
         "live_riblt_agrees_with_ladder": all(r["riblt_candidates_equal_ladder"] is not False for r in rounds),
         "final_rows_source": len(s_scan), "final_rows_target": len(t_scan), "final_truth_keys": len(truth),
         "final_reported_equals_truth": reported == truth, "final_candidates_equal_truth": candidates == truth,
-        "shards_own_every_key_once": len(union) == sum(len(k) for k in owned) and rows_keys <= union,
+        "shards_own_every_key_once": len(union) == sum(len(k) for k in owned)
+        and bool(np.isin(rows_keys, union).all()),
         "ladder_sketches_match_rescan": sketches_ok, "riblt_sketches_match_rescan": riblt_ok,
     })
     close()
