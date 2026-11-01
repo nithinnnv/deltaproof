@@ -403,6 +403,7 @@ def main() -> None:
     p.add_argument("--suffix", default="")
     p.add_argument("--ladder-every", type=int, default=1)
     p.add_argument("--no-tombstones", action="store_true", help="ablation: ignore delete versions in confirmation")
+    p.add_argument("--ladder-capacity", type=int, default=262_144)
     p.add_argument("--shards", type=int, default=1,
                    help="Kafka partitions, each verified by its own replicator and verifier processes (bench/live_sharded.py)")
     p.add_argument("--split", action="store_true",

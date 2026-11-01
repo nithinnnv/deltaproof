@@ -238,7 +238,8 @@ class Live:
     def __init__(self, args):
         self.a = args
         self.rng = np.random.default_rng(args.seed)
-        self.cfg = LadderConfig(max_capacity=262_144)
+        # A smaller ladder forces decode failures, to exercise the rescan fallback in tests.
+        self.cfg = LadderConfig(max_capacity=getattr(args, "ladder_capacity", 262_144))
         self.src, self.tgt = Sketch(self.cfg), Sketch(self.cfg)
         self.last_t: dict[Key, int] = {}  # target-side digest per key (Lemma 2's side table)
         # Source states per key for confirmation: the state at the watermark, plus later changes.

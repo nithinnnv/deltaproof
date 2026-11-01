@@ -11,6 +11,7 @@ shards, triggers checks on all of them together, merges their records, and compu
 
 from __future__ import annotations
 
+import atexit
 import csv
 import multiprocessing as mp
 import sys
@@ -146,11 +147,18 @@ def run(args, pipe_name: str) -> None:
     for shard in range(n):
         v_rep, r_conn = ctx.Pipe()
         coord, v_coord = ctx.Pipe()
-        procs.append(ctx.Process(target=replicator_main, args=(r_conn, pipe_name, args, topic, t_start, shard),
-                                 daemon=True))
-        procs.append(ctx.Process(target=verifier_main,
-                                 args=(v_coord, v_rep, pipe_name, args, topic, t_start, shard), daemon=True))
+        # Not daemons: a verifier's rescan fallback starts scan workers, which daemon processes may not have.
+        procs.append(ctx.Process(target=replicator_main, args=(r_conn, pipe_name, args, topic, t_start, shard)))
+        procs.append(ctx.Process(target=verifier_main, args=(v_coord, v_rep, pipe_name, args, topic, t_start, shard)))
         coords.append(coord)
+
+    def abandon() -> None:  # a failed run must not leave shards running or a replication slot in use
+        for p in procs:
+            if p.is_alive():
+                p.terminate()
+        P.drop(name)
+
+    atexit.register(abandon)
     for p in procs:
         p.start()
 
@@ -203,7 +211,7 @@ def run(args, pipe_name: str) -> None:
     sketches_ok, riblt_ok = True, True
     for f, keys in zip(fins, owned):  # each shard's sketches against sketches rebuilt from its keys' rows
         s_own, t_own = _members(s_scan, keys), _members(t_scan, keys)
-        cfg = LadderConfig(max_capacity=262_144)  # as Live.__init__
+        cfg = LadderConfig(max_capacity=args.ladder_capacity)  # as Live.__init__
         rs, rt = Sketch(cfg), Sketch(cfg)
         rs.update(s_own.khi, s_own.klo, s_own.dig)
         rt.update(t_own.khi, t_own.klo, t_own.dig)
@@ -238,6 +246,7 @@ def run(args, pipe_name: str) -> None:
         "ladder_sketches_match_rescan": sketches_ok, "riblt_sketches_match_rescan": riblt_ok,
     })
     close()
+    atexit.unregister(abandon)
     P.drop(name)
     d = ROOT / "results" / P.sub
     live_cluster.write(tag, out, rounds, [r for f in fins for r in f["reports"]],
