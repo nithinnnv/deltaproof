@@ -91,7 +91,7 @@ def verifier_main(coord, rep, pipe_name: str, args, topic: str, t_start: float, 
         cmd, arg = coord.recv()
         if cmd == "progress":
             pr = live._call("progress")
-            coord.send({**pr, "verifier_max_polled": live.max_polled})
+            coord.send({**pr, "verifier_max_polled": live.max_polled, "verifier_cpu_s": time.process_time()})
         elif cmd == "check":
             rec = live.verify_now(None, target, arg)["rec"]
             coord.send({**rec, "shard": shard})
@@ -199,7 +199,8 @@ def run(args, pipe_name: str) -> None:
     bb = P.benchbase(tag, args)
     print(f"TPC-C running ({args.seconds}s)", flush=True)
     next_check = time.monotonic() + args.interval
-    next_resources = time.monotonic()
+    next_resources = time.monotonic() + 60
+    last_cpu = (time.monotonic(), _broadcast(coords, "progress"))
     # Rounds reach disk as they happen, so a run that dies later still has its record.
     partial_dir = ROOT / "results" / P.sub
     partial_dir.mkdir(parents=True, exist_ok=True)
@@ -212,10 +213,18 @@ def run(args, pipe_name: str) -> None:
             rounds.append(r)
             partial.writerow({k: r.get(k) for k in PARTIAL})
             partial_file.flush()
-            if time.monotonic() >= next_resources:
-                print(f"  resources t={r['t']}s {_resources(P)}", flush=True)
-                next_resources = time.monotonic() + 300
-            backlog = sum(p["backlog"] for p in _broadcast(coords, "progress"))
+            prs = _broadcast(coords, "progress")
+            backlog = sum(p["backlog"] for p in prs)
+            now = time.monotonic()
+            if now >= next_resources:
+                # Cores each role used since the last line: a shard near 1.0 is limited by its own process.
+                dt = max(1e-9, now - last_cpu[0])
+                rep = [(p["cpu_s"] - a["cpu_s"]) / dt for p, a in zip(prs, last_cpu[1])]
+                ver = [(p["verifier_cpu_s"] - a["verifier_cpu_s"]) / dt for p, a in zip(prs, last_cpu[1])]
+                print(f"  resources t={r['t']}s {_resources(P)} replicator_cores_mean={np.mean(rep):.2f} "
+                      f"max={max(rep):.2f} verifier_cores_mean={np.mean(ver):.2f} max={max(ver):.2f}", flush=True)
+                last_cpu = (now, prs)
+                next_resources = now + 300
             print(f"  t={r['t']}s cand={r['candidates']} reported={r['reported']} false={r['reported_false']} "
                   f"missed={r['missed']} riblt={r['riblt_bytes']}B slowest={r['total_ms_max']}ms backlog={backlog}",
                   flush=True)

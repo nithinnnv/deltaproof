@@ -139,7 +139,8 @@ def replicator_main(conn, pipe_name: str, args, topic: str, t_start: float, part
             with live.qlock:
                 backlog = len(live.queue) + len(live.deferred)
             conn.send({"snapshot_done": live.snapshot_done.is_set(), "backlog": backlog,
-                       "snapshot_events": live.snapshot_events, "max_processed": live.max_processed})
+                       "snapshot_events": live.snapshot_events, "max_processed": live.max_processed,
+                       "cpu_s": time.process_time()})
         elif cmd == "clear_lag":
             live.stats.lag_samples.clear()
             conn.send(True)
