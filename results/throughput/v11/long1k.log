@@ -1,0 +1,391 @@
+Debezium snapshot (backfill) of 15,108,341 rows into 16 partitions
+  backfill done: 15,108,341 rows in 343.2 s; reported=14933 false=0
+TPC-C running (3600s)
+  t=362.7s cand=15011 reported=15007 false=0 missed=0 riblt=2246328B slowest=543.2ms backlog=32096
+  t=373.3s cand=15059 reported=15056 false=0 missed=0 riblt=2252952B slowest=535.4ms backlog=25280
+  t=384.0s cand=15151 reported=15144 false=0 missed=0 riblt=2279160B slowest=554.8ms backlog=25935
+  t=394.6s cand=15205 reported=15202 false=0 missed=0 riblt=2282976B slowest=566.6ms backlog=34396
+  t=405.3s cand=15251 reported=15245 false=0 missed=0 riblt=2295360B slowest=623.1ms backlog=31379
+  resources t=415.9s mem_free_gb=224 pg_data_gb=3 pg_wal_kept_gb=3.4 replicator_cores_mean=0.30 max=0.32 verifier_cores_mean=0.12 max=0.13
+  t=415.9s cand=15321 reported=15317 false=0 missed=0 riblt=2311272B slowest=603.2ms backlog=27191
+  t=426.6s cand=15343 reported=15340 false=0 missed=0 riblt=2312280B slowest=580.2ms backlog=33153
+  t=437.3s cand=15345 reported=15343 false=0 missed=0 riblt=2323728B slowest=691.7ms backlog=22668
+  t=448.0s cand=15399 reported=15398 false=0 missed=0 riblt=2328264B slowest=539.2ms backlog=29042
+  t=458.6s cand=15442 reported=15442 false=0 missed=0 riblt=2332152B slowest=508.6ms backlog=31952
+  t=469.2s cand=15476 reported=15471 false=0 missed=0 riblt=2347776B slowest=627.5ms backlog=25805
+  t=480.0s cand=15492 reported=15483 false=0 missed=0 riblt=2351520B slowest=660.8ms backlog=26557
+  t=490.6s cand=15554 reported=15550 false=0 missed=0 riblt=2371680B slowest=589.6ms backlog=25559
+  t=501.4s cand=15636 reported=15629 false=0 missed=0 riblt=2377944B slowest=565.6ms backlog=30202
+  t=512.1s cand=15618 reported=15617 false=0 missed=0 riblt=2376288B slowest=545.4ms backlog=33922
+  t=522.8s cand=15599 reported=15599 false=0 missed=0 riblt=2372544B slowest=548.4ms backlog=34651
+  t=533.5s cand=15599 reported=15598 false=0 missed=0 riblt=2372688B slowest=602.5ms backlog=25807
+  t=544.2s cand=15596 reported=15595 false=0 missed=0 riblt=2372760B slowest=604.5ms backlog=31741
+  t=554.9s cand=15603 reported=15596 false=0 missed=0 riblt=2375280B slowest=612.2ms backlog=34460
+  t=565.4s cand=15699 reported=15695 false=0 missed=0 riblt=2386728B slowest=535.3ms backlog=37516
+  t=576.1s cand=15731 reported=15726 false=0 missed=0 riblt=2389824B slowest=652.2ms backlog=29471
+  t=586.7s cand=15730 reported=15728 false=0 missed=0 riblt=2395080B slowest=610.3ms backlog=31373
+  t=597.3s cand=15772 reported=15760 false=0 missed=0 riblt=2407320B slowest=604.9ms backlog=34025
+  t=608.1s cand=15847 reported=15842 false=0 missed=0 riblt=2421936B slowest=685.9ms backlog=34069
+  t=618.8s cand=16004 reported=15999 false=0 missed=0 riblt=2449944B slowest=656.2ms backlog=30848
+  t=629.4s cand=16042 reported=16041 false=0 missed=0 riblt=2462328B slowest=580.4ms backlog=31441
+  t=640.1s cand=16083 reported=16075 false=0 missed=0 riblt=2467008B slowest=563.3ms backlog=28551
+  t=650.8s cand=16225 reported=16220 false=0 missed=0 riblt=2498184B slowest=488.7ms backlog=30335
+  t=661.3s cand=16333 reported=16326 false=0 missed=0 riblt=2517192B slowest=554.1ms backlog=34019
+  t=671.9s cand=16354 reported=16352 false=0 missed=0 riblt=2531880B slowest=563.3ms backlog=36697
+  t=682.6s cand=16358 reported=16351 false=0 missed=0 riblt=2531448B slowest=642.5ms backlog=25951
+  t=693.5s cand=16386 reported=16375 false=0 missed=0 riblt=2530800B slowest=731.6ms backlog=34016
+  t=704.3s cand=16397 reported=16395 false=0 missed=0 riblt=2534616B slowest=798.0ms backlog=22681
+  t=714.8s cand=16434 reported=16434 false=0 missed=0 riblt=2532024B slowest=455.5ms backlog=31962
+  resources t=725.8s mem_free_gb=223 pg_data_gb=4 pg_wal_kept_gb=2.8 replicator_cores_mean=0.33 max=0.35 verifier_cores_mean=0.13 max=0.14
+  t=725.8s cand=16503 reported=16495 false=0 missed=0 riblt=2540592B slowest=842.1ms backlog=29840
+  t=736.8s cand=16575 reported=16572 false=0 missed=0 riblt=2555568B slowest=967.2ms backlog=31092
+  t=747.6s cand=16657 reported=16652 false=0 missed=0 riblt=2564928B slowest=714.1ms backlog=31161
+  t=758.3s cand=16738 reported=16733 false=0 missed=0 riblt=2585160B slowest=699.9ms backlog=32611
+  t=769.1s cand=16807 reported=16804 false=0 missed=0 riblt=2596968B slowest=676.6ms backlog=33283
+  t=780.0s cand=16867 reported=16856 false=0 missed=0 riblt=2596968B slowest=805.3ms backlog=24320
+  t=790.8s cand=16895 reported=16892 false=0 missed=0 riblt=2609064B slowest=664.8ms backlog=30921
+  t=801.4s cand=16904 reported=16898 false=0 missed=0 riblt=2608056B slowest=602.4ms backlog=31929
+  t=812.0s cand=16912 reported=16908 false=0 missed=0 riblt=2610576B slowest=545.7ms backlog=26392
+  t=822.7s cand=16955 reported=16948 false=0 missed=0 riblt=2618856B slowest=598.6ms backlog=32660
+  t=833.2s cand=16995 reported=16994 false=0 missed=0 riblt=2631528B slowest=515.6ms backlog=28619
+  t=843.9s cand=17086 reported=17081 false=0 missed=0 riblt=2642184B slowest=691.0ms backlog=39679
+  t=854.6s cand=17132 reported=17130 false=0 missed=0 riblt=2649672B slowest=661.3ms backlog=29586
+  t=865.2s cand=17234 reported=17229 false=0 missed=0 riblt=2670048B slowest=672.6ms backlog=26314
+  t=876.2s cand=17309 reported=17304 false=0 missed=0 riblt=2692008B slowest=773.2ms backlog=24101
+  t=887.0s cand=17371 reported=17368 false=0 missed=0 riblt=2703312B slowest=665.0ms backlog=33334
+  t=897.7s cand=17463 reported=17455 false=0 missed=0 riblt=2723328B slowest=661.6ms backlog=31556
+  t=908.6s cand=17572 reported=17568 false=0 missed=0 riblt=2741040B slowest=710.6ms backlog=29025
+  t=919.7s cand=17590 reported=17587 false=0 missed=0 riblt=2744496B slowest=916.3ms backlog=30504
+  t=930.7s cand=17629 reported=17625 false=0 missed=0 riblt=2751696B slowest=831.1ms backlog=30765
+  t=941.3s cand=17720 reported=17719 false=0 missed=0 riblt=2766384B slowest=591.4ms backlog=34424
+  t=952.4s cand=17825 reported=17820 false=0 missed=0 riblt=2776464B slowest=814.0ms backlog=28413
+  t=963.3s cand=17914 reported=17910 false=0 missed=0 riblt=2803320B slowest=815.4ms backlog=31648
+  t=974.1s cand=18003 reported=17997 false=0 missed=0 riblt=2823768B slowest=786.8ms backlog=27520
+  t=985.1s cand=18065 reported=18062 false=0 missed=0 riblt=2831040B slowest=849.7ms backlog=29461
+  t=996.0s cand=18100 reported=18087 false=0 missed=0 riblt=2838600B slowest=764.0ms backlog=36087
+  t=1006.9s cand=18138 reported=18136 false=0 missed=0 riblt=2847816B slowest=797.9ms backlog=27550
+  t=1018.0s cand=18194 reported=18190 false=0 missed=0 riblt=2860920B slowest=884.5ms backlog=32168
+  resources t=1028.9s mem_free_gb=224 pg_data_gb=4 pg_wal_kept_gb=3.0 replicator_cores_mean=0.34 max=0.36 verifier_cores_mean=0.14 max=0.14
+  t=1028.9s cand=18242 reported=18235 false=0 missed=0 riblt=2862216B slowest=804.4ms backlog=30018
+  t=1039.7s cand=18299 reported=18296 false=0 missed=0 riblt=2867760B slowest=772.2ms backlog=37231
+  t=1050.8s cand=18381 reported=18373 false=0 missed=0 riblt=2890368B slowest=929.3ms backlog=25622
+  t=1061.7s cand=18469 reported=18465 false=0 missed=0 riblt=2904984B slowest=774.9ms backlog=26972
+  t=1072.5s cand=18512 reported=18505 false=0 missed=0 riblt=2908656B slowest=685.8ms backlog=36028
+  t=1083.4s cand=18536 reported=18535 false=0 missed=0 riblt=2917800B slowest=751.8ms backlog=30315
+  t=1094.3s cand=18573 reported=18569 false=0 missed=0 riblt=2924928B slowest=672.3ms backlog=28981
+  t=1105.1s cand=18642 reported=18640 false=0 missed=0 riblt=2935368B slowest=661.2ms backlog=33120
+  t=1116.1s cand=18712 reported=18710 false=0 missed=0 riblt=2955744B slowest=878.8ms backlog=29260
+  t=1127.2s cand=18806 reported=18803 false=0 missed=0 riblt=2971728B slowest=859.8ms backlog=29776
+  t=1138.3s cand=18889 reported=18883 false=0 missed=0 riblt=2987712B slowest=901.9ms backlog=32009
+  t=1149.1s cand=19001 reported=18996 false=0 missed=0 riblt=3000168B slowest=787.9ms backlog=29546
+  t=1160.0s cand=19102 reported=19101 false=0 missed=0 riblt=3020688B slowest=770.5ms backlog=27963
+  t=1170.7s cand=19147 reported=19142 false=0 missed=0 riblt=3032928B slowest=680.9ms backlog=30247
+  t=1181.6s cand=19192 reported=19185 false=0 missed=0 riblt=3049704B slowest=777.8ms backlog=33998
+  t=1192.6s cand=19274 reported=19271 false=0 missed=0 riblt=3074112B slowest=713.8ms backlog=30834
+  t=1203.4s cand=19327 reported=19323 false=0 missed=0 riblt=3077352B slowest=724.0ms backlog=30732
+  t=1214.2s cand=19406 reported=19404 false=0 missed=0 riblt=3097296B slowest=716.3ms backlog=26061
+  t=1225.1s cand=19506 reported=19503 false=0 missed=0 riblt=3117816B slowest=802.4ms backlog=31302
+  t=1236.0s cand=19553 reported=19552 false=0 missed=0 riblt=3124008B slowest=796.5ms backlog=33448
+  t=1246.8s cand=19641 reported=19637 false=0 missed=0 riblt=3142080B slowest=746.0ms backlog=31947
+  t=1257.6s cand=19680 reported=19671 false=0 missed=0 riblt=3144096B slowest=736.0ms backlog=29055
+  t=1268.5s cand=19709 reported=19704 false=0 missed=0 riblt=3154968B slowest=725.0ms backlog=30279
+  t=1279.4s cand=19763 reported=19763 false=0 missed=0 riblt=3173760B slowest=767.8ms backlog=26394
+  t=1290.3s cand=19796 reported=19793 false=0 missed=0 riblt=3179376B slowest=752.9ms backlog=25431
+  t=1301.0s cand=19846 reported=19845 false=0 missed=0 riblt=3185856B slowest=641.4ms backlog=33131
+  t=1312.1s cand=19880 reported=19877 false=0 missed=0 riblt=3193416B slowest=842.5ms backlog=32571
+  t=1323.0s cand=19918 reported=19915 false=0 missed=0 riblt=3190896B slowest=748.2ms backlog=37051
+  resources t=1333.9s mem_free_gb=224 pg_data_gb=4 pg_wal_kept_gb=3.2 replicator_cores_mean=0.35 max=0.38 verifier_cores_mean=0.14 max=0.15
+  t=1333.9s cand=19944 reported=19939 false=0 missed=0 riblt=3195720B slowest=865.3ms backlog=27315
+  t=1344.6s cand=19998 reported=19994 false=0 missed=0 riblt=3209616B slowest=628.1ms backlog=34342
+  t=1355.6s cand=20065 reported=20065 false=0 missed=0 riblt=3228984B slowest=634.1ms backlog=32097
+  t=1366.8s cand=20117 reported=20116 false=0 missed=0 riblt=3231576B slowest=883.7ms backlog=37820
+  t=1377.8s cand=20165 reported=20158 false=0 missed=0 riblt=3231720B slowest=745.6ms backlog=27519
+  t=1389.0s cand=20238 reported=20235 false=0 missed=0 riblt=3244032B slowest=951.7ms backlog=31295
+  t=1399.9s cand=20318 reported=20314 false=0 missed=0 riblt=3263112B slowest=846.8ms backlog=27758
+  t=1410.8s cand=20431 reported=20428 false=0 missed=0 riblt=3278664B slowest=763.3ms backlog=29237
+  t=1421.7s cand=20493 reported=20485 false=0 missed=0 riblt=3288384B slowest=799.1ms backlog=33256
+  t=1432.5s cand=20572 reported=20563 false=0 missed=0 riblt=3300336B slowest=814.3ms backlog=30428
+  t=1443.7s cand=20674 reported=20665 false=0 missed=0 riblt=3330144B slowest=1003.6ms backlog=33601
+  t=1454.7s cand=20771 reported=20760 false=0 missed=0 riblt=3350664B slowest=953.2ms backlog=31989
+  t=1465.7s cand=20840 reported=20831 false=0 missed=0 riblt=3355416B slowest=991.5ms backlog=32918
+  t=1476.8s cand=20929 reported=20920 false=0 missed=0 riblt=3388752B slowest=877.6ms backlog=30203
+  t=1487.5s cand=20982 reported=20980 false=0 missed=0 riblt=3388608B slowest=599.3ms backlog=30016
+  t=1498.5s cand=21061 reported=21059 false=0 missed=0 riblt=3408912B slowest=820.4ms backlog=28849
+  t=1509.6s cand=21103 reported=21095 false=0 missed=0 riblt=3424176B slowest=760.7ms backlog=31556
+  t=1520.2s cand=21142 reported=21142 false=0 missed=0 riblt=3427200B slowest=657.0ms backlog=29128
+  t=1530.9s cand=21193 reported=21192 false=0 missed=0 riblt=3447864B slowest=649.7ms backlog=32416
+  t=1542.2s cand=21218 reported=21215 false=0 missed=0 riblt=3450672B slowest=1056.3ms backlog=33615
+  t=1552.9s cand=21261 reported=21260 false=0 missed=0 riblt=3441600B slowest=679.0ms backlog=29215
+  t=1563.7s cand=21349 reported=21347 false=0 missed=0 riblt=3455352B slowest=600.9ms backlog=32431
+  t=1574.5s cand=21407 reported=21404 false=0 missed=0 riblt=3479112B slowest=757.0ms backlog=31477
+  t=1585.5s cand=21457 reported=21451 false=0 missed=0 riblt=3475296B slowest=778.7ms backlog=31900
+  t=1596.5s cand=21522 reported=21520 false=0 missed=0 riblt=3490416B slowest=924.8ms backlog=27122
+  t=1607.5s cand=21595 reported=21589 false=0 missed=0 riblt=3497256B slowest=849.7ms backlog=32583
+  t=1618.5s cand=21609 reported=21596 false=0 missed=0 riblt=3500496B slowest=824.2ms backlog=25474
+  t=1629.2s cand=21655 reported=21651 false=0 missed=0 riblt=3512016B slowest=668.8ms backlog=32253
+  resources t=1640.3s mem_free_gb=224 pg_data_gb=4 pg_wal_kept_gb=3.9 replicator_cores_mean=0.36 max=0.38 verifier_cores_mean=0.14 max=0.15
+  t=1640.3s cand=21709 reported=21707 false=0 missed=0 riblt=3527856B slowest=794.8ms backlog=28719
+  t=1651.2s cand=21788 reported=21779 false=0 missed=0 riblt=3536136B slowest=735.9ms backlog=30762
+  t=1662.2s cand=21853 reported=21848 false=0 missed=0 riblt=3545568B slowest=841.4ms backlog=26084
+  t=1673.4s cand=21879 reported=21873 false=0 missed=0 riblt=3541176B slowest=885.3ms backlog=27675
+  t=1684.3s cand=21921 reported=21915 false=0 missed=0 riblt=3571488B slowest=913.9ms backlog=26473
+  t=1695.2s cand=21948 reported=21947 false=0 missed=0 riblt=3563136B slowest=827.4ms backlog=31555
+  t=1706.0s cand=21996 reported=21992 false=0 missed=0 riblt=3572208B slowest=789.5ms backlog=31879
+  t=1716.9s cand=22061 reported=22059 false=0 missed=0 riblt=3577176B slowest=764.4ms backlog=28784
+  t=1728.0s cand=22121 reported=22113 false=0 missed=0 riblt=3595392B slowest=896.8ms backlog=33242
+  t=1739.1s cand=22188 reported=22177 false=0 missed=0 riblt=3616488B slowest=934.0ms backlog=29280
+  t=1750.1s cand=22230 reported=22222 false=0 missed=0 riblt=3613248B slowest=728.4ms backlog=24818
+  t=1761.1s cand=22292 reported=22288 false=0 missed=0 riblt=3616632B slowest=704.7ms backlog=31070
+  t=1772.1s cand=22346 reported=22341 false=0 missed=0 riblt=3633048B slowest=980.5ms backlog=31055
+  t=1783.1s cand=22411 reported=22400 false=0 missed=0 riblt=3633120B slowest=823.6ms backlog=30459
+  t=1794.2s cand=22462 reported=22448 false=0 missed=0 riblt=3648096B slowest=975.0ms backlog=32682
+  t=1805.1s cand=22511 reported=22508 false=0 missed=0 riblt=3659616B slowest=837.0ms backlog=35241
+  t=1815.9s cand=22589 reported=22581 false=0 missed=0 riblt=3676320B slowest=810.3ms backlog=35236
+  t=1827.1s cand=22659 reported=22656 false=0 missed=0 riblt=3686112B slowest=864.3ms backlog=33084
+  t=1838.0s cand=22741 reported=22736 false=0 missed=0 riblt=3706128B slowest=781.3ms backlog=31270
+  t=1849.0s cand=22784 reported=22778 false=0 missed=0 riblt=3703968B slowest=843.7ms backlog=29873
+  t=1859.9s cand=22844 reported=22838 false=0 missed=0 riblt=3727512B slowest=829.8ms backlog=32542
+  t=1870.6s cand=22875 reported=22867 false=0 missed=0 riblt=3741120B slowest=679.8ms backlog=31707
+  t=1881.7s cand=22916 reported=22909 false=0 missed=0 riblt=3752352B slowest=917.8ms backlog=33158
+  t=1892.7s cand=22971 reported=22963 false=0 missed=0 riblt=3769056B slowest=943.8ms backlog=34603
+  t=1903.6s cand=23007 reported=23007 false=0 missed=0 riblt=3762504B slowest=795.3ms backlog=32414
+  t=1914.3s cand=23065 reported=23062 false=0 missed=0 riblt=3759336B slowest=718.4ms backlog=31673
+  t=1925.6s cand=23120 reported=23115 false=0 missed=0 riblt=3772512B slowest=1071.4ms backlog=29015
+  t=1936.5s cand=23162 reported=23159 false=0 missed=0 riblt=3785400B slowest=810.1ms backlog=34576
+  resources t=1947.5s mem_free_gb=221 pg_data_gb=4 pg_wal_kept_gb=3.7 replicator_cores_mean=0.38 max=0.40 verifier_cores_mean=0.14 max=0.15
+  t=1947.5s cand=23208 reported=23207 false=0 missed=0 riblt=3790512B slowest=813.3ms backlog=35003
+  t=1958.5s cand=23239 reported=23237 false=0 missed=0 riblt=3805128B slowest=944.5ms backlog=37673
+  t=1969.5s cand=23319 reported=23316 false=0 missed=0 riblt=3817656B slowest=835.6ms backlog=30505
+  t=1980.4s cand=23322 reported=23318 false=0 missed=0 riblt=3803256B slowest=662.6ms backlog=33176
+  t=1991.3s cand=23356 reported=23351 false=0 missed=0 riblt=3812544B slowest=924.8ms backlog=31450
+  t=2002.2s cand=23396 reported=23390 false=0 missed=0 riblt=3823920B slowest=716.4ms backlog=25262
+  t=2013.3s cand=23425 reported=23422 false=0 missed=0 riblt=3823200B slowest=1096.0ms backlog=32994
+  t=2024.3s cand=23501 reported=23493 false=0 missed=0 riblt=3846960B slowest=844.2ms backlog=28546
+  t=2035.4s cand=23535 reported=23528 false=0 missed=0 riblt=3857184B slowest=870.8ms backlog=28480
+  t=2046.4s cand=23582 reported=23576 false=0 missed=0 riblt=3862296B slowest=714.2ms backlog=30552
+  t=2057.5s cand=23624 reported=23613 false=0 missed=0 riblt=3881952B slowest=870.2ms backlog=26677
+  t=2068.3s cand=23666 reported=23658 false=0 missed=0 riblt=3872376B slowest=727.3ms backlog=33695
+  t=2079.2s cand=23727 reported=23724 false=0 missed=0 riblt=3881808B slowest=734.9ms backlog=33107
+  t=2090.3s cand=23793 reported=23783 false=0 missed=0 riblt=3888720B slowest=926.8ms backlog=29914
+  t=2101.2s cand=23875 reported=23873 false=0 missed=0 riblt=3909024B slowest=882.0ms backlog=30634
+  t=2112.3s cand=23955 reported=23950 false=0 missed=0 riblt=3925224B slowest=975.8ms backlog=39188
+  t=2123.1s cand=24040 reported=24040 false=0 missed=0 riblt=3948768B slowest=880.1ms backlog=28914
+  t=2133.9s cand=24113 reported=24111 false=0 missed=0 riblt=3970224B slowest=737.1ms backlog=35740
+  t=2144.8s cand=24162 reported=24157 false=0 missed=0 riblt=3966408B slowest=832.5ms backlog=33992
+  t=2155.9s cand=24251 reported=24247 false=0 missed=0 riblt=3976848B slowest=969.7ms backlog=32453
+  t=2166.6s cand=24322 reported=24313 false=0 missed=0 riblt=3989592B slowest=747.9ms backlog=26736
+  t=2177.7s cand=24381 reported=24376 false=0 missed=0 riblt=4000752B slowest=772.9ms backlog=30552
+  t=2188.6s cand=24463 reported=24456 false=0 missed=0 riblt=4017600B slowest=795.6ms backlog=28004
+  t=2199.7s cand=24528 reported=24521 false=0 missed=0 riblt=4035960B slowest=843.6ms backlog=25828
+  t=2210.6s cand=24580 reported=24575 false=0 missed=0 riblt=4056552B slowest=732.7ms backlog=32540
+  t=2221.9s cand=24670 reported=24664 false=0 missed=0 riblt=4060152B slowest=1046.7ms backlog=30649
+  t=2233.1s cand=24731 reported=24729 false=0 missed=0 riblt=4071456B slowest=795.4ms backlog=36469
+  t=2243.9s cand=24810 reported=24807 false=0 missed=0 riblt=4102272B slowest=810.6ms backlog=33615
+  resources t=2254.8s mem_free_gb=221 pg_data_gb=5 pg_wal_kept_gb=3.9 replicator_cores_mean=0.39 max=0.41 verifier_cores_mean=0.15 max=0.15
+  t=2254.8s cand=24907 reported=24900 false=0 missed=0 riblt=4122504B slowest=799.9ms backlog=32153
+  t=2265.7s cand=24986 reported=24978 false=0 missed=0 riblt=4136760B slowest=808.8ms backlog=34857
+  t=2276.5s cand=25047 reported=25040 false=0 missed=0 riblt=4128264B slowest=724.2ms backlog=35055
+  t=2287.6s cand=25107 reported=25099 false=0 missed=0 riblt=4141800B slowest=1001.1ms backlog=26326
+  t=2298.3s cand=25173 reported=25171 false=0 missed=0 riblt=4149504B slowest=673.8ms backlog=30449
+  t=2309.4s cand=25250 reported=25242 false=0 missed=0 riblt=4157640B slowest=768.5ms backlog=35282
+  t=2320.0s cand=25265 reported=25264 false=0 missed=0 riblt=4170672B slowest=585.2ms backlog=27723
+  t=2331.1s cand=25342 reported=25335 false=0 missed=0 riblt=4163328B slowest=989.5ms backlog=38011
+  t=2342.1s cand=25401 reported=25389 false=0 missed=0 riblt=4175712B slowest=927.3ms backlog=31390
+  t=2353.2s cand=25427 reported=25424 false=0 missed=0 riblt=4194792B slowest=1088.3ms backlog=32254
+  t=2364.3s cand=25475 reported=25469 false=0 missed=0 riblt=4189464B slowest=861.2ms backlog=29507
+  t=2375.4s cand=25520 reported=25517 false=0 missed=0 riblt=4207968B slowest=844.4ms backlog=40621
+  t=2386.4s cand=25570 reported=25564 false=0 missed=0 riblt=4222008B slowest=849.8ms backlog=29366
+  t=2397.2s cand=25638 reported=25631 false=0 missed=0 riblt=4237128B slowest=783.0ms backlog=31972
+  t=2408.2s cand=25683 reported=25675 false=0 missed=0 riblt=4234536B slowest=960.4ms backlog=28380
+  t=2419.2s cand=25722 reported=25719 false=0 missed=0 riblt=4245768B slowest=734.7ms backlog=32690
+  t=2430.4s cand=25799 reported=25796 false=0 missed=0 riblt=4268088B slowest=914.7ms backlog=33990
+  t=2441.3s cand=25888 reported=25879 false=0 missed=0 riblt=4285512B slowest=938.7ms backlog=28223
+  t=2452.4s cand=25945 reported=25934 false=0 missed=0 riblt=4299984B slowest=1039.2ms backlog=29633
+  t=2463.8s cand=25991 reported=25988 false=0 missed=0 riblt=4304952B slowest=1113.6ms backlog=30912
+  t=2474.9s cand=26083 reported=26081 false=0 missed=0 riblt=4332096B slowest=1008.4ms backlog=31125
+  t=2485.9s cand=26150 reported=26147 false=0 missed=0 riblt=4338360B slowest=956.4ms backlog=25657
+  t=2497.2s cand=26233 reported=26226 false=0 missed=0 riblt=4347000B slowest=1072.9ms backlog=28919
+  t=2508.7s cand=26303 reported=26296 false=0 missed=0 riblt=4375368B slowest=1070.4ms backlog=32247
+  t=2520.1s cand=26349 reported=26337 false=0 missed=0 riblt=4384872B slowest=893.7ms backlog=30549
+  t=2531.3s cand=26396 reported=26391 false=0 missed=0 riblt=4388832B slowest=1054.6ms backlog=30098
+  t=2542.3s cand=26419 reported=26416 false=0 missed=0 riblt=4381560B slowest=797.4ms backlog=32314
+  t=2553.2s cand=26459 reported=26456 false=0 missed=0 riblt=4393224B slowest=806.4ms backlog=30869
+  resources t=2564.5s mem_free_gb=220 pg_data_gb=5 pg_wal_kept_gb=5.3 replicator_cores_mean=0.40 max=0.43 verifier_cores_mean=0.15 max=0.15
+  t=2564.5s cand=26505 reported=26500 false=0 missed=0 riblt=4399200B slowest=896.0ms backlog=32362
+  t=2575.5s cand=26561 reported=26554 false=0 missed=0 riblt=4412304B slowest=981.9ms backlog=31804
+  t=2586.8s cand=26611 reported=26609 false=0 missed=0 riblt=4403952B slowest=943.8ms backlog=32365
+  t=2597.9s cand=26648 reported=26645 false=0 missed=0 riblt=4416480B slowest=928.6ms backlog=34851
+  t=2609.3s cand=26701 reported=26698 false=0 missed=0 riblt=4427712B slowest=1182.0ms backlog=31568
+  t=2620.7s cand=26776 reported=26766 false=0 missed=0 riblt=4441824B slowest=980.2ms backlog=36062
+  t=2631.8s cand=26818 reported=26812 false=0 missed=0 riblt=4450824B slowest=1114.7ms backlog=34344
+  t=2643.0s cand=26888 reported=26882 false=0 missed=0 riblt=4465728B slowest=1093.1ms backlog=31093
+  t=2654.1s cand=26926 reported=26919 false=0 missed=0 riblt=4469328B slowest=961.2ms backlog=28003
+  t=2665.4s cand=26944 reported=26939 false=0 missed=0 riblt=4484088B slowest=956.6ms backlog=35411
+  t=2676.3s cand=27003 reported=26996 false=0 missed=0 riblt=4483080B slowest=838.1ms backlog=24936
+  t=2687.3s cand=27032 reported=27028 false=0 missed=0 riblt=4492944B slowest=830.4ms backlog=31750
+  t=2698.1s cand=27077 reported=27068 false=0 missed=0 riblt=4513176B slowest=750.2ms backlog=31254
+  t=2708.9s cand=27086 reported=27081 false=0 missed=0 riblt=4498848B slowest=786.7ms backlog=27875
+  t=2719.7s cand=27151 reported=27145 false=0 missed=0 riblt=4509936B slowest=805.6ms backlog=32689
+  t=2730.7s cand=27188 reported=27186 false=0 missed=0 riblt=4519440B slowest=685.1ms backlog=35959
+  t=2741.6s cand=27217 reported=27211 false=0 missed=0 riblt=4521960B slowest=832.5ms backlog=29722
+  t=2752.7s cand=27275 reported=27267 false=0 missed=0 riblt=4526784B slowest=952.7ms backlog=26519
+  t=2763.7s cand=27326 reported=27323 false=0 missed=0 riblt=4543488B slowest=857.3ms backlog=32411
+  t=2774.7s cand=27403 reported=27401 false=0 missed=0 riblt=4551048B slowest=893.9ms backlog=32622
+  t=2785.6s cand=27439 reported=27434 false=0 missed=0 riblt=4562784B slowest=805.6ms backlog=29754
+  t=2796.9s cand=27505 reported=27502 false=0 missed=0 riblt=4575312B slowest=1022.0ms backlog=37958
+  t=2808.1s cand=27557 reported=27548 false=0 missed=0 riblt=4585824B slowest=955.5ms backlog=29691
+  t=2819.6s cand=27621 reported=27616 false=0 missed=0 riblt=4594248B slowest=1150.4ms backlog=33788
+  t=2830.7s cand=27679 reported=27676 false=0 missed=0 riblt=4598280B slowest=1094.9ms backlog=28734
+  t=2842.0s cand=27754 reported=27742 false=0 missed=0 riblt=4610520B slowest=1043.6ms backlog=31388
+  t=2853.2s cand=27834 reported=27826 false=0 missed=0 riblt=4613832B slowest=947.6ms backlog=32490
+  resources t=2864.5s mem_free_gb=220 pg_data_gb=5 pg_wal_kept_gb=4.3 replicator_cores_mean=0.42 max=0.44 verifier_cores_mean=0.15 max=0.16
+  t=2864.5s cand=27881 reported=27874 false=0 missed=0 riblt=4626216B slowest=1060.0ms backlog=33666
+  t=2875.5s cand=27938 reported=27930 false=0 missed=0 riblt=4634064B slowest=898.0ms backlog=34644
+  t=2886.3s cand=27983 reported=27979 false=0 missed=0 riblt=4643928B slowest=782.2ms backlog=34827
+  t=2897.3s cand=28027 reported=28023 false=0 missed=0 riblt=4658040B slowest=888.6ms backlog=29938
+  t=2908.3s cand=28082 reported=28078 false=0 missed=0 riblt=4663296B slowest=846.9ms backlog=33876
+  t=2919.5s cand=28167 reported=28162 false=0 missed=0 riblt=4682232B slowest=916.4ms backlog=34574
+  t=2930.8s cand=28236 reported=28228 false=0 missed=0 riblt=4692456B slowest=1001.6ms backlog=30013
+  t=2942.3s cand=28293 reported=28289 false=0 missed=0 riblt=4691376B slowest=1224.9ms backlog=32223
+  t=2953.8s cand=28344 reported=28336 false=0 missed=0 riblt=4710456B slowest=1201.5ms backlog=31663
+  t=2965.2s cand=28422 reported=28420 false=0 missed=0 riblt=4722552B slowest=971.5ms backlog=35113
+  t=2976.4s cand=28478 reported=28477 false=0 missed=0 riblt=4725648B slowest=967.7ms backlog=31388
+  t=2987.7s cand=28530 reported=28525 false=0 missed=0 riblt=4746960B slowest=957.4ms backlog=29048
+  t=2998.9s cand=28601 reported=28596 false=0 missed=0 riblt=4759272B slowest=920.9ms backlog=31434
+  t=3010.3s cand=28669 reported=28664 false=0 missed=0 riblt=4763016B slowest=983.7ms backlog=31985
+  t=3021.8s cand=28711 reported=28700 false=0 missed=0 riblt=4772088B slowest=1080.5ms backlog=32885
+  t=3033.2s cand=28740 reported=28735 false=0 missed=0 riblt=4777344B slowest=1299.7ms backlog=35499
+  t=3044.3s cand=28795 reported=28785 false=0 missed=0 riblt=4798584B slowest=967.0ms backlog=29388
+  t=3055.5s cand=28868 reported=28857 false=0 missed=0 riblt=4814568B slowest=1161.9ms backlog=29701
+  t=3066.6s cand=28883 reported=28877 false=0 missed=0 riblt=4812912B slowest=997.4ms backlog=34710
+  t=3077.5s cand=28904 reported=28900 false=0 missed=0 riblt=4800816B slowest=828.5ms backlog=34312
+  t=3088.6s cand=28953 reported=28943 false=0 missed=0 riblt=4810752B slowest=980.4ms backlog=26616
+  t=3099.7s cand=29003 reported=28997 false=0 missed=0 riblt=4823136B slowest=809.1ms backlog=33019
+  t=3110.8s cand=29065 reported=29060 false=0 missed=0 riblt=4833576B slowest=1039.1ms backlog=36120
+  t=3122.1s cand=29119 reported=29117 false=0 missed=0 riblt=4840344B slowest=1008.6ms backlog=34510
+  t=3133.3s cand=29178 reported=29172 false=0 missed=0 riblt=4852656B slowest=1181.4ms backlog=28630
+  t=3144.7s cand=29214 reported=29207 false=0 missed=0 riblt=4868496B slowest=1154.0ms backlog=31140
+  t=3156.1s cand=29252 reported=29248 false=0 missed=0 riblt=4870944B slowest=1186.7ms backlog=32740
+  resources t=3167.3s mem_free_gb=219 pg_data_gb=5 pg_wal_kept_gb=4.6 replicator_cores_mean=0.43 max=0.46 verifier_cores_mean=0.15 max=0.16
+  t=3167.3s cand=29282 reported=29275 false=0 missed=0 riblt=4880736B slowest=969.2ms backlog=31051
+  t=3178.5s cand=29329 reported=29328 false=0 missed=0 riblt=4901040B slowest=935.9ms backlog=29905
+  t=3189.4s cand=29363 reported=29358 false=0 missed=0 riblt=4897008B slowest=847.1ms backlog=33032
+  t=3200.5s cand=29431 reported=29422 false=0 missed=0 riblt=4905072B slowest=858.5ms backlog=32424
+  t=3211.3s cand=29472 reported=29470 false=0 missed=0 riblt=4908960B slowest=799.2ms backlog=32872
+  t=3222.2s cand=29532 reported=29527 false=0 missed=0 riblt=4912704B slowest=807.0ms backlog=33781
+  t=3233.0s cand=29588 reported=29584 false=0 missed=0 riblt=4937040B slowest=764.4ms backlog=33583
+  t=3243.8s cand=29658 reported=29656 false=0 missed=0 riblt=4945968B slowest=705.3ms backlog=29310
+  t=3254.6s cand=29716 reported=29713 false=0 missed=0 riblt=4962816B slowest=772.4ms backlog=36996
+  t=3265.3s cand=29794 reported=29790 false=0 missed=0 riblt=4978512B slowest=744.4ms backlog=29636
+  t=3276.1s cand=29872 reported=29870 false=0 missed=0 riblt=4986648B slowest=761.8ms backlog=32306
+  t=3287.0s cand=29915 reported=29912 false=0 missed=0 riblt=4989744B slowest=860.3ms backlog=34632
+  t=3297.8s cand=29971 reported=29965 false=0 missed=0 riblt=4996008B slowest=743.6ms backlog=36183
+  t=3308.6s cand=30041 reported=30039 false=0 missed=0 riblt=5014152B slowest=782.2ms backlog=33439
+  t=3319.5s cand=30106 reported=30102 false=0 missed=0 riblt=5030712B slowest=948.5ms backlog=35391
+  t=3331.1s cand=30166 reported=30159 false=0 missed=0 riblt=5030928B slowest=1222.1ms backlog=31766
+  t=3342.6s cand=30251 reported=30246 false=0 missed=0 riblt=5049648B slowest=1137.0ms backlog=32666
+  t=3354.0s cand=30302 reported=30297 false=0 missed=0 riblt=5047128B slowest=1055.3ms backlog=31878
+  t=3365.2s cand=30395 reported=30392 false=0 missed=0 riblt=5078376B slowest=1065.3ms backlog=31500
+  t=3376.5s cand=30484 reported=30480 false=0 missed=0 riblt=5089608B slowest=963.0ms backlog=36701
+  t=3387.6s cand=30576 reported=30574 false=0 missed=0 riblt=5118336B slowest=871.9ms backlog=33749
+  t=3398.7s cand=30671 reported=30662 false=0 missed=0 riblt=5127408B slowest=997.4ms backlog=31835
+  t=3409.4s cand=30742 reported=30739 false=0 missed=0 riblt=5120496B slowest=687.0ms backlog=32577
+  t=3420.4s cand=30837 reported=30832 false=0 missed=0 riblt=5133888B slowest=1024.5ms backlog=34946
+  t=3431.7s cand=30894 reported=30888 false=0 missed=0 riblt=5161392B slowest=1059.0ms backlog=24984
+  t=3443.7s cand=30980 reported=30973 false=0 missed=0 riblt=5179752B slowest=1509.6ms backlog=34103
+  t=3455.2s cand=31045 reported=31040 false=0 missed=0 riblt=5180832B slowest=1219.6ms backlog=35125
+  t=3466.5s cand=31113 reported=31110 false=0 missed=0 riblt=5182200B slowest=1076.7ms backlog=31526
+  resources t=3477.4s mem_free_gb=218 pg_data_gb=6 pg_wal_kept_gb=5.1 replicator_cores_mean=0.44 max=0.47 verifier_cores_mean=0.15 max=0.16
+  t=3477.4s cand=31210 reported=31208 false=0 missed=0 riblt=5208048B slowest=759.7ms backlog=34851
+  t=3488.8s cand=31295 reported=31289 false=0 missed=0 riblt=5242464B slowest=1195.2ms backlog=33391
+  t=3500.2s cand=31355 reported=31340 false=0 missed=0 riblt=5236632B slowest=970.7ms backlog=34539
+  t=3511.7s cand=31423 reported=31420 false=0 missed=0 riblt=5245776B slowest=1096.1ms backlog=29351
+  t=3523.1s cand=31523 reported=31510 false=0 missed=0 riblt=5277096B slowest=994.0ms backlog=27493
+  t=3534.7s cand=31568 reported=31561 false=0 missed=0 riblt=5290344B slowest=1293.2ms backlog=34170
+  t=3545.8s cand=31663 reported=31656 false=0 missed=0 riblt=5320728B slowest=1115.7ms backlog=28440
+  t=3557.4s cand=31706 reported=31697 false=0 missed=0 riblt=5322024B slowest=1174.8ms backlog=29427
+  t=3568.9s cand=31795 reported=31784 false=0 missed=0 riblt=5343336B slowest=1055.4ms backlog=27349
+  t=3580.2s cand=31869 reported=31862 false=0 missed=0 riblt=5363208B slowest=1128.3ms backlog=35847
+  t=3591.6s cand=31919 reported=31919 false=0 missed=0 riblt=5374872B slowest=960.4ms backlog=32544
+  t=3602.4s cand=32016 reported=32012 false=0 missed=0 riblt=5387040B slowest=798.1ms backlog=34309
+  t=3614.1s cand=32056 reported=32052 false=0 missed=0 riblt=5391936B slowest=1220.1ms backlog=28551
+  t=3625.5s cand=32134 reported=32127 false=0 missed=0 riblt=5393808B slowest=1080.2ms backlog=27796
+  t=3637.0s cand=32207 reported=32203 false=0 missed=0 riblt=5424048B slowest=1310.7ms backlog=39382
+  t=3648.6s cand=32274 reported=32267 false=0 missed=0 riblt=5432040B slowest=1281.3ms backlog=31761
+  t=3659.9s cand=32341 reported=32336 false=0 missed=0 riblt=5431104B slowest=1172.6ms backlog=40895
+  t=3671.2s cand=32374 reported=32368 false=0 missed=0 riblt=5437584B slowest=1110.2ms backlog=33599
+  t=3682.6s cand=32474 reported=32461 false=0 missed=0 riblt=5443704B slowest=1192.9ms backlog=34697
+  t=3694.1s cand=32526 reported=32512 false=0 missed=0 riblt=5454720B slowest=1172.2ms backlog=26292
+  t=3705.7s cand=32609 reported=32603 false=0 missed=0 riblt=5479056B slowest=1225.4ms backlog=32057
+  t=3717.1s cand=32677 reported=32666 false=0 missed=0 riblt=5490360B slowest=1106.5ms backlog=25327
+  t=3728.7s cand=32719 reported=32712 false=0 missed=0 riblt=5491152B slowest=1173.7ms backlog=28558
+  t=3740.3s cand=32794 reported=32787 false=0 missed=0 riblt=5508720B slowest=1186.6ms backlog=32941
+  t=3751.6s cand=32839 reported=32829 false=0 missed=0 riblt=5526288B slowest=1245.2ms backlog=33629
+  t=3762.7s cand=32885 reported=32882 false=0 missed=0 riblt=5520024B slowest=1050.7ms backlog=34825
+  t=3774.0s cand=32917 reported=32912 false=0 missed=0 riblt=5536224B slowest=1104.0ms backlog=32482
+  resources t=3785.4s mem_free_gb=217 pg_data_gb=6 pg_wal_kept_gb=2.8 replicator_cores_mean=0.45 max=0.48 verifier_cores_mean=0.15 max=0.16
+  t=3785.4s cand=32987 reported=32980 false=0 missed=0 riblt=5549400B slowest=1110.0ms backlog=32881
+  t=3797.0s cand=33035 reported=33027 false=0 missed=0 riblt=5560056B slowest=1188.6ms backlog=26125
+  t=3808.5s cand=33070 reported=33064 false=0 missed=0 riblt=5560632B slowest=1234.7ms backlog=30995
+  t=3819.9s cand=33109 reported=33104 false=0 missed=0 riblt=5577408B slowest=1129.5ms backlog=32636
+  t=3831.3s cand=33196 reported=33192 false=0 missed=0 riblt=5603976B slowest=965.9ms backlog=33098
+  t=3842.6s cand=33242 reported=33235 false=0 missed=0 riblt=5603688B slowest=1074.8ms backlog=30661
+  t=3854.3s cand=33291 reported=33281 false=0 missed=0 riblt=5616864B slowest=1245.9ms backlog=32589
+  t=3865.4s cand=33353 reported=33349 false=0 missed=0 riblt=5623920B slowest=1023.3ms backlog=26031
+  t=3877.0s cand=33381 reported=33368 false=0 missed=0 riblt=5639688B slowest=1165.0ms backlog=27331
+  t=3888.7s cand=33450 reported=33444 false=0 missed=0 riblt=5642496B slowest=1287.7ms backlog=31044
+  t=3900.0s cand=33518 reported=33512 false=0 missed=0 riblt=5665464B slowest=1002.4ms backlog=34583
+  t=3911.0s cand=33548 reported=33545 false=0 missed=0 riblt=5653584B slowest=892.0ms backlog=28663
+  t=3922.0s cand=33608 reported=33604 false=0 missed=0 riblt=5665968B slowest=984.7ms backlog=32579
+  t=3932.6s cand=33630 reported=33627 false=0 missed=0 riblt=5667480B slowest=640.8ms backlog=32774
+  t=3943.9s cand=33706 reported=33695 false=0 missed=0 riblt=5679504B slowest=983.3ms backlog=38185
+  t=3955.5s cand=33768 reported=33759 false=0 missed=0 riblt=5680512B slowest=1206.8ms backlog=15489
+TPC-C finished (benchbase exit 0); draining the change stream
+  rescan: reading both stores in full
+final full scans for ground truth; mem_free_gb=240 pg_data_gb=6 pg_wal_kept_gb=2.9
+pipeline                               postgresql->cassandra
+cassandra_nodes                        3
+mode                                   live
+shards                                 16
+rate                                   1000
+seconds                                3600
+terminals                              64
+warehouses                             32
+lag_s                                  2.0
+reorder                                0.0
+drop                                   0.0005
+corrupt                                0.0005
+interval_s                             10.0
+rateless_symbols                       262144
+no_tombstones                          False
+backfill_events                        15108341
+backfill_s                             343.2
+benchbase_exit                         0
+tpcc_throughput_tps                    1000.0
+tpcc_goodput_tps                       988.67
+tpcc_latency_p50_ms                    4.14
+tpcc_latency_p95_ms                    12.75
+tpcc_latency_p99_ms                    28.04
+changes_captured                       70528096
+dropped                                34741
+corrupted                              34876
+deferred                               0
+apply_delay_p50_s                      2.01
+apply_delay_p99_s                      2.17
+live_rounds                            327
+live_reported_false_total              0
+live_reported_while_rewritten_total    0
+live_missed_total                      0
+live_round_ms_median                   842.1
+live_replicator_paused_ms_median       307.1
+live_riblt_bytes_median                3966408.0
+live_riblt_agrees_with_ladder          True
+final_rows_source                      33213323
+final_rows_target                      33204621
+final_truth_keys                       33770
+final_reported_equals_truth            True
+final_candidates_equal_truth           True
+shards_own_every_key_once              True
+ladder_sketches_match_rescan           True
+riblt_sketches_match_rescan            True
+wrote /home/macintoshhd/deltaproof/results/cluster/live_r1000_l2_s16_long1h.csv
